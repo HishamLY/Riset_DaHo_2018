@@ -16,7 +16,7 @@ CXXFLAGS += -O2 -DLINUX -Wall $(INCLUDE_DIRS)
 #CXXFLAGS += -O2 -DDEBUG -DLINUX -Wall $(INCLUDE_DIRS)
 LFLAGS += -lpthread -ljpeg -pthread
 
-OBJECTS =   main.o
+OBJECTS = main.o
 
 all: $(TARGET)
 
