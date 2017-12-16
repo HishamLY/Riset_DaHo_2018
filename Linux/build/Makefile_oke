@@ -1,0 +1,84 @@
+###############################################################
+#
+# Purpose: Makefile for "DARwIn Linux Framework"
+# Author.: robotis
+# Version: 0.1
+# License: GPL
+#
+###############################################################
+
+CC = g++
+AR = ar
+ARFLAGS = cr
+
+TARGET = darwin.a
+
+INCLUDE_DIRS = -I../include -I../../Framework/include 
+#-I../../../../../../usr/include
+
+CXXFLAGS += -O2 -DLINUX -Wall -shared  $(INCLUDE_DIRS)
+#CXXFLAGS += -O2 -DDEBUG -DLINUX -Wall -shared $(INCLUDE_DIRS)
+LFLAGS += -lpthread -ldl
+
+#extension untuk openGL
+#NFLAGS +=  -lglut -lGL -lGLU -lX11  -lXi -lm
+
+
+OBJS =  ../../Framework/src/Behavior.o		\
+	../../Framework/src/CameraMatrix.o	\
+	../../Framework/src/CameraMatrixProvider.o \
+	../../Framework/src/CM730.o     	\
+	../../Framework/src/FieldDimensions.o	\
+	../../Framework/src/GameController.o	\
+	../../Framework/src/Geometry.o		\
+	../../Framework/src/ImageCoordinateSystem.o \
+	../../Framework/src/LinePercept.o	\
+	../../Framework/src/LinePerceptor.o	\
+	../../Framework/src/Localization.o	\
+	../../Framework/src/MVTools.o 		\
+	../../Framework/src/PointExplorer.o	\
+	../../Framework/src/RegionAnalyzer.o	\
+	../../Framework/src/Regionizer.o	\
+	../../Framework/src/RegionPercept.o	\
+	../../Framework/src/RobotModelProvider.o\
+	../../Framework/src/RobotModel.o	\
+	../../Framework/src/RotationMatrix.o 	\
+	../../Framework/src/StatusCheck.o	\
+	../../Framework/src/TorsoMatrixProvider.o \
+	../../Framework/src/RobotCameraMatrixProvider.o \
+	../../Framework/src/math/Matrix.o   \
+        ../../Framework/src/math/Plane.o    \
+        ../../Framework/src/math/Point.o    \
+        ../../Framework/src/math/Vector.o   \
+        ../../Framework/src/math/MathFunction.o   \
+        ../../Framework/src/motion/JointData.o  	\
+        ../../Framework/src/motion/Kinematics.o 	\
+        ../../Framework/src/motion/MotionManager.o  \
+        ../../Framework/src/motion/MotionStatus.o   \
+        ../../Framework/src/motion/modules/Action.o \
+        ../../Framework/src/motion/modules/Head.o   \
+        ../../Framework/src/motion/modules/Walking.o\
+        ../../Framework/src/vision/BallFollower.o   \
+        ../../Framework/src/vision/BallTracker.o    \
+        ../../Framework/src/vision/ColorFinder.o    \
+        ../../Framework/src/vision/Image.o  		\
+        ../../Framework/src/vision/ImgProcess.o 	\
+        ../../Framework/src/minIni/minIni.o	\
+	../../Framework/src/DebugDrawings.o	\
+        streamer/httpd.o           \
+        streamer/jpeg_utils.o      \
+        streamer/mjpg_streamer.o   \
+        LinuxActionScript.o   \
+        LinuxCamera.o   \
+        LinuxCM730.o    \
+        LinuxMotionTimer.o    \
+        LinuxNetwork.o
+
+$(TARGET): $(OBJS)
+	$(AR) $(ARFLAGS) ../lib/$(TARGET)  $(OBJS)
+#	$(CC) -o $(TARGET) $(OBJS) $(LFLAGS)
+
+all: $(TARGET) 
+
+clean:
+	rm -f $(OBJS) ../lib/$(TARGET)

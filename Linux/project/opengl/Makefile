@@ -1,0 +1,45 @@
+###############################################################
+#
+# Purpose: Makefile for "demo"
+# Author.: robotis
+# Version: 0.1
+# License: GPL
+#
+###############################################################
+
+TARGET = demo
+
+INCLUDE_DIRS = -I../../include -I../../../Framework/include -I../../../../../../../usr/include
+#penambahan include untuk openGL
+
+CXX = g++
+CXXFLAGS += -O2 -DLINUX -Wall $(INCLUDE_DIRS)
+#CXXFLAGS += -O2 -DDEBUG -DLINUX -Wall $(INCLUDE_DIRS)
+LFLAGS += -pthread -ljpeg -lrt 
+
+#extension untuk openGL
+NFLAGS +=  -lglut -lGL -lGLU -lX11  -lXi -lm
+
+OBJECTS = main.o
+
+all: $(TARGET)
+
+clean:
+	rm -f *.a *.o $(TARGET) core *~ *.so *.lo
+
+libclean:
+	make -C ../../build clean
+
+distclean: clean libclean
+
+darwin.a:
+	make -C ../../build
+
+$(TARGET): darwin.a $(OBJECTS)
+	$(CXX) $(CFLAGS) $(LFLAGS) $(OBJECTS) ../../lib/darwin.a -o $(TARGET) /usr/lib/i386-linux-gnu/libjpeg.a $(NFLAGS)
+	chmod 755 $(TARGET)
+
+# useful to make a backup "make tgz"
+tgz: clean
+	mkdir -p backups
+	tar czvf ./backups/DARwIn_demo_`date +"%Y_%m_%d_%H.%M.%S"`.tgz --exclude backups *

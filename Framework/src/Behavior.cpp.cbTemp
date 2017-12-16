@@ -1,0 +1,524 @@
+#include "Behavior.h"
+#include "ColorFinder.h"
+#include "math.h"
+
+using namespace Robot;
+
+Behavior* Behavior::m_UniqueInstance = new Behavior();
+
+Behavior::Behavior()
+{
+	State = NORMAL_STATE;
+	Tracker = BallTracker();
+    	Follower = BallFollower();
+
+	CountToReady = 0;
+	WaitUntilReady = false;
+}
+
+double panLastSeenPost(1);
+extern int countHeadSearchingCycle;
+
+void Behavior::Process(Point2D center)
+{
+	ObjectPos = center;
+
+	switch(State)
+	{
+		case READY_STATE : ReadyState(); break;
+		case NORMAL_STATE : NormalState(); break;
+		case CHECK_POST_STATE : checkPost(); break;
+		case TURN_AROUND_BALL_STATE : turningBall(); break;
+		case DRIBBLE_STATE : dribbleBall(); break;
+		case PENALTY_KICK_STATE : PenaltyKickState(); break;
+		case STATIC_STATE : StaticState(); break;
+		case FIRST_PENALTY_SEARCHING : FirstPenaltySearching(); break;
+		case LOCALIZE_PENALTY_MARK : LocalizePenaltyMark(); break;
+		case LOCALIZE_GOALPOST : LocalizeGoalPost(); break;
+		case PASS_BALL_STATE : PassBall(); break;
+	}
+}
+
+void Behavior::CheckStatus()
+{
+	switch(State)
+        {
+                case READY_STATE : printf("READY STATE\n"); break;
+                case NORMAL_STATE : printf("NORMAL STATE\n"); break;
+                case CHECK_POST_STATE : printf("CHECK POST STATE\n"); break;
+                case TURN_AROUND_BALL_STATE : printf("TURN AROUND BALL STATE\n"); break;
+                case DRIBBLE_STATE : printf("DRIBBLE STATE\n"); break;
+                case PENALTY_KICK_STATE : printf("PENALTY KICK STATE\n"); break;
+		case STATIC_STATE : printf("STATIC STATE\n"); break;
+                case FIRST_PENALTY_SEARCHING : printf("FIRST PENALTY SEARCHING\n"); break;
+                case LOCALIZE_PENALTY_MARK : printf("LOCALIZE PENALTY MARK\n"); break;
+                case LOCALIZE_GOALPOST : printf("LOCALIZE GOAL POST\n"); break;
+                case PASS_BALL_STATE : printf("PASS BALL STATE\n"); break;
+        }
+}
+
+extern bool startKickOff;
+extern bool ObstacleDetected;
+
+void Behavior::LocalizePenaltyMark()
+{
+	Tracker.Process(ObjectPos);
+//	Tracker.ProcessLocalizePenaltyMark(ObjectPos);
+        Follower.ProcessLocalizePenaltyMark(Tracker.ball_position);
+}
+
+void Behavior::LocalizeGoalPost()
+{
+	Tracker.ProcessCheckPost(ObjectPos);
+	Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+}
+
+void Behavior::FirstPenaltySearching()
+{
+	Tracker.Process(ObjectPos);
+        Follower.ProcessFirstPenaltySearching(Tracker.ball_position);
+
+	if(ObjectPos.X != -1 && ObjectPos.Y != -1)
+		set_normal_state();
+}
+
+void Behavior::PenaltyKickState()
+{
+	Tracker.ProcessPenaltyKick(ObjectPos);
+        Follower.ProcessPenaltyKick(Tracker.ball_position);
+
+	if(Action::GetInstance()->IsRunning() == 0)
+        {
+                Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                if(Follower.KickBall != 0)
+                {
+                    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                    Action::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                    if(Follower.KickBall == -1)
+                    {
+                        Action::GetInstance()->Start(113);   // RIGHT KICK
+                        //fprintf(stderr, "RightKick! \n");
+                    }
+                    else if(Follower.KickBall == 1)
+                    {
+                        Action::GetInstance()->Start(117);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                    }
+                }
+        }
+}
+
+void Behavior::PassBall()
+{
+        Tracker.ProcessPenaltyKick(ObjectPos);
+        //Follower.ProcessPenaltyKick(Tracker.ball_position);
+	Follower.ProcessPassBall(Tracker.ball_position);
+
+        if(Action::GetInstance()->IsRunning() == 0)
+        {
+               // Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+               // Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                if(Follower.KickBall != 0)
+                {
+                    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                    Action::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                    if(Follower.KickBall == -1)
+                    {
+                        Action::GetInstance()->Start(131);   // RIGHT KICK
+                        //fprintf(stderr, "RightKick! \n");
+                    }
+                    else if(Follower.KickBall == 1)
+                    {
+                        Action::GetInstance()->Start(130);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                    }
+                }
+        }
+}
+
+
+void Behavior::StaticState()
+{
+	Tracker.Process(ObjectPos);
+
+	ReadyState();
+}
+
+void Behavior::ReadyState()
+{	
+	Follower.InitKickBallCount();
+	Follower.initMember();
+
+        Behavior::GetInstance()->set_normal_state();
+        Walking::GetInstance()->stop_counting_step();
+
+	Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->A_MOVE_AIM_ON = false;
+
+        Behavior::GetInstance()->CountToReady = 0;
+        Behavior::GetInstance()->WaitUntilReady = true;
+
+	countHeadSearchingCycle = 0;
+}
+
+void Behavior::NormalState()
+{
+	Tracker.Process(ObjectPos);
+	Follower.Process(Tracker.ball_position);
+	
+	if(State == CHECK_POST_STATE)
+	{
+		WaitUntilReady = true;
+		CountToReady = 0;
+	}
+}
+
+void Behavior::checkPost()
+{
+//	printf("CENTER(%lf,%lf)\n",ObjectPos.X,ObjectPos.Y);
+	if(WaitUntilReady)
+     	{
+        	if(CountToReady > MaxCountToReady)
+        	{
+                	WaitUntilReady = false;
+                	CountToReady = 0;
+
+			Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+//			Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+//			Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+
+			if(panLastSeenPost > 0)
+                	{
+                        	Head::GetInstance()->initSearchingPost(LEFT);
+                	}
+                	else
+                	{
+                        	Head::GetInstance()->initSearchingPost(RIGHT);
+                	}
+        	}
+		else
+		{
+			if(GoalPercept::GetInstance()->Status == GoalPercept::BOTH_POST)
+			{
+				if(GoalPercept::GetInstance()->RightPart.X > Camera::WIDTH/2.0 && GoalPercept::GetInstance()->LeftPart.X < Camera::WIDTH/2.0)
+				{
+//					GoalPercept::GetInstance()->CheckPostStatus();
+//					printf("=== BOTH POST AHEAD");
+					Walking::GetInstance()->stop_counting_step();
+
+                                	Head::GetInstance()->LookDown();
+                                	CountToReady = 0;
+                                	WaitUntilReady = true;
+
+//					printf("CENTERHEAD.Y = %lf\n",GoalPercept::GetInstance()->CenterHead.Y);
+
+					if(GoalPercept::GetInstance()->CenterHead.Y < 120.0)
+					{
+                                                set_penalty_kick_state();
+//						printf(" -- KICK BALL\n");
+					}
+					else
+					{
+						set_dribble_ball();
+//						printf(" -- DRIBBLE BALL\n");
+					}
+
+/*					if(startKickOff)
+					{
+						if(ObstacleDetected)
+						{
+							set_pass_ball_state();
+							ObstacleDetected = false;
+        						startKickOff = false;
+						}
+
+						startKickOff = false;
+					}
+*/				}
+			}
+			else if(GoalPercept::GetInstance()->Status == GoalPercept::LEFT_POST)
+			{
+				if(GoalPercept::GetInstance()->Center.X < Camera::WIDTH/2.0)
+				{
+//					GoalPercept::GetInstance()->CheckPostStatus();
+//					printf("=== LEFT POST AHEAD");
+					Walking::GetInstance()->stop_counting_step();
+
+                                        Head::GetInstance()->LookDown();
+                                        CountToReady = 0;
+                                        WaitUntilReady = true;
+
+//					printf("CENTERHEAD.Y = %lf\n",GoalPercept::GetInstance()->CenterHead.Y);
+
+					if(GoalPercept::GetInstance()->CenterHead.Y < 120.0)
+                                        {
+                                                set_penalty_kick_state();
+//	                                        printf(" -- KICK BALL\n");
+                                        }
+                                        else
+                                        {
+                                                set_dribble_ball();
+//	                                        printf(" -- DRIBBLE BALL\n");
+                                        }
+
+/*					if(startKickOff)
+                                        {
+                                                if(ObstacleDetected)
+						{
+							set_pass_ball_state();
+							ObstacleDetected = false;
+                                                        startKickOff = false;
+						}
+
+                                                startKickOff = false;
+                                        }
+*/				}
+			}
+			else if(GoalPercept::GetInstance()->Status == GoalPercept::RIGHT_POST)
+			{
+				if(GoalPercept::GetInstance()->Center.X > Camera::WIDTH/2.0)
+				{
+//					GoalPercept::GetInstance()->CheckPostStatus();
+//					printf("=== RIGHT POST AHEAD");
+					Walking::GetInstance()->stop_counting_step();
+
+                                        Head::GetInstance()->LookDown();
+                                        CountToReady = 0;
+                                        WaitUntilReady = true;
+
+//					printf("CENTERHEAD.Y = %lf\n",GoalPercept::GetInstance()->CenterHead.Y);
+
+					if(GoalPercept::GetInstance()->CenterHead.Y < 120.0)
+                                        {
+                                                set_penalty_kick_state();
+//	                                        printf(" -- KICK BALL\n");
+                                        }
+                                        else
+                                        {
+                                                set_dribble_ball();
+//	                                        printf(" -- DRIBBLE BALL\n");
+                                        }
+
+/*					if(startKickOff)
+                                        {
+                                                if(ObstacleDetected)
+						{
+							set_pass_ball_state();
+							ObstacleDetected = false;
+                                                        startKickOff = false;
+						}
+
+                                                startKickOff = false;
+                                        }
+*/				}
+			}
+
+			CountToReady++;
+			countHeadSearchingCycle = 0;
+		}
+     	}
+     	else
+     	{
+		Tracker.ProcessCheckPost(ObjectPos);
+
+		if(ObjectPos.X != -1 && ObjectPos.Y != -1)
+		{
+			panLastSeenPost = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_PAN);
+		}
+
+		if(ObjectPos.X > Camera::WIDTH/2.0 - 15.0 && ObjectPos.X < Camera::WIDTH/2.0 + 15.0)
+		{
+                        Walking::GetInstance()->start_counting_step();
+
+                        StepToDo = 1.5* panLastSeenPost/10;
+                        if(StepToDo < 0) StepToDo = -StepToDo;
+			if(StepToDo > 4) StepToDo = 4;
+
+/*			printf("PAN LAS = %lf\n",panLastSeenPost);
+			if(panLastSeenPost < 60 && panLastSeenPost > 30)
+			{
+				set_pass_ball_state();
+			}
+			else if(panLastSeenPost > -60 && panLastSeenPost < -30)
+			{
+				set_pass_ball_state();
+			}
+			else
+*/                      	set_turn_around_ball();
+
+			if(StepToDo < 2)
+			{
+//				GoalPercept::GetInstance()->CheckPostStatus();
+//	                        printf("=== POST AHEAD");
+                                Walking::GetInstance()->stop_counting_step();
+
+                                Head::GetInstance()->LookDown();
+                                CountToReady = 0;
+                                WaitUntilReady = true;
+
+//				printf("CENTERHEAD.Y = %lf\n",GoalPercept::GetInstance()->CenterHead.Y);
+
+                                if(GoalPercept::GetInstance()->CenterHead.Y < 120.0)
+                                {
+                                	set_penalty_kick_state();
+//	                                printf(" -- KICK BALL\n");
+                                }
+                                else
+                                {
+                                        set_dribble_ball();
+//	                                printf(" -- DRIBBLE BALL\n");
+                                }
+
+				return;
+			}
+
+			Head::GetInstance()->LookDown();
+                        CountToReady = 0;
+                        WaitUntilReady = true;
+//			GoalPercept::GetInstance()->CheckPostStatus();
+//			printf("OBJECT IN CENTER CAMERA -- TURN AROUND BALL\n");
+		}
+		else
+		{
+			if(GoalPercept::GetInstance()->Center.X == -1 && GoalPercept::GetInstance()->Center.Y == -1)
+        		{
+                		if(countHeadSearchingCycle > 1)
+                		{
+                        		Walking::GetInstance()->start_counting_step();
+                        		StepToDo = 7;
+
+                        		set_turn_around_ball();
+
+                        		countHeadSearchingCycle = 0;
+                        		Head::GetInstance()->LookDown();
+                        		CountToReady = 0;
+                        		WaitUntilReady = true;
+//					GoalPercept::GetInstance()->CheckPostStatus();
+//					printf("FULL SEARCHING -- POST NOT FOUND  -- TURN AROUND BALL\n");
+                		}
+        		}
+			else
+			{
+				if(Head::GetInstance()->GetPanAngle() >= Head::GetInstance()->GetLeftLimitAngle() || Head::GetInstance()->GetPanAngle() <= Head::GetInstance()->GetRightLimitAngle())
+				{
+					Walking::GetInstance()->start_counting_step();
+
+                               		StepToDo = 1.5* panLastSeenPost/10;
+					if(StepToDo < 0) StepToDo = -StepToDo;
+
+                                	set_turn_around_ball();
+
+					if(StepToDo > 4) StepToDo = 4;
+
+                                	Head::GetInstance()->LookDown();
+                                	CountToReady = 0;
+                                	WaitUntilReady = true;
+//	                              	GoalPercept::GetInstance()->CheckPostStatus();
+//                             		printf("OBJECT NOT IN CENTER CAMERA -- TURN AROUND BALL\n");
+				}
+			}
+		}
+	}
+}
+
+void Behavior::turningBall()
+{
+	ObstacleDetected = false;
+	startKickOff = false;
+//	printf("STEPTODO = %d  STEPDOING = %d\n",StepToDo,Walking::GetInstance()->get_walking_step());
+//	printf("Ball(%lf,%lf)\n",ObjectPos.X, ObjectPos.Y);
+                if(WaitUntilReady)
+                {
+                        if(CountToReady > MaxCountToReady)
+                        {
+                                WaitUntilReady = false;
+                                CountToReady = 0;
+                        }
+			else
+			{
+				CountToReady++;
+			}
+                }
+                else
+                {
+                        if(Walking::GetInstance()->get_walking_step() > StepToDo)
+                        {
+				Walking::GetInstance()->stop_counting_step();
+
+				set_check_post_position();
+
+                                Head::GetInstance()->LookUp();
+				if(ObjectPos.X < 0 && ObjectPos.Y < 0)
+				{
+                                	Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+                                	Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+                                	Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+				}
+				else
+				{
+					if(panLastSeenPost < 0)
+					{
+						Walking::GetInstance()->Y_MOVE_AMPLITUDE = 40;
+                                		Walking::GetInstance()->A_MOVE_AMPLITUDE = 15;
+                                		Walking::GetInstance()->A_MOVE_AIM_ON = true;
+					}
+					else
+					{
+						Walking::GetInstance()->Y_MOVE_AMPLITUDE = -30;
+                                		Walking::GetInstance()->A_MOVE_AMPLITUDE = -10;
+                                		Walking::GetInstance()->A_MOVE_AIM_ON = true;
+					}
+				}
+
+				CountToReady = 0;
+                        	WaitUntilReady = true;
+                        }
+                        else
+                        {
+                                Tracker.Process(ObjectPos);
+                                Follower.ProcessTurnAroundBall(Tracker.ball_position);
+
+				if(State == NORMAL_STATE)
+				{
+					Walking::GetInstance()->stop_counting_step();
+
+					CountToReady = 0;
+                                	WaitUntilReady = true;
+				}
+	                }
+                }
+}
+
+void Behavior::dribbleBall()
+{
+ObstacleDetected = false;
+startKickOff = false;
+	if(WaitUntilReady)
+	{
+		Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+                Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+                Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+
+		if(CountToReady > MaxCountToReady)
+		{
+			WaitUntilReady = false;
+			CountToReady = 0;
+		}
+		else
+		{
+			CountToReady++;
+		}
+	}
+	else
+	{
+		Tracker.ProcessToKick(ObjectPos);
+		Follower.ProcessToKick(Tracker.ball_position);
+	}
+}

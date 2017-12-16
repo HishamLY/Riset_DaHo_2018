@@ -1,0 +1,627 @@
+
+#include "Behavior.h"
+#include "ColorFinder.h"
+#include "Head.h"
+#include "Walking.h"
+#include "math.h"
+
+using namespace Robot;
+
+Behavior* Behavior::m_UniqueInstance = new Behavior();
+
+Behavior::Behavior()
+{
+	State = NORMAL_STATE;
+	Tracker = BallTracker();
+    	Follower = BallFollower();
+	X_Moved = 0;
+	CountToReady = 0;
+	WaitUntilReady = false;
+}
+
+double panLastSeenPost(1); 
+double tiltLastSeenBall(1);
+double PanLastSeenBall(1);
+double PanPossible(0); //save pan angle if found possible post
+int CompassError(0); //save error compass reading
+int mark(0);
+Point2D GoalPos;
+int Count(0);
+extern int countHeadSearchingCycle;
+
+void Behavior::Process(Point2D center, int Objectsize,Vector2<int> Distance)
+{
+	//untuk normal state dll yang nyari bola, maka ObjectSize diisi dengan jarak robot ke garis
+	//untuk checkpost state yang nyari gawang, maka objectSize diisi dengan pembacaan nilai kompas
+	ObjectPos = center;
+	ObjectDistance = Distance;
+	ObjectSize = Objectsize;
+
+	switch(State)
+	{
+		case READY_STATE : ReadyState(); break;
+		case NORMAL_STATE : NormalState(); break;
+		case CHECK_POST_STATE : checkPost(); break;
+		case APROACHING_BALL : ProcessAproachingBall2(); break;
+		case TURN_AROUND_BALL_STATE : turningBall(); break;
+		case DRIBBLE_STATE : dribbleBall(); break;
+		case PENALTY_KICK_STATE : PenaltyKickState(); break;
+		case STATIC_STATE : StaticState(); break;
+		case FIRST_PENALTY_SEARCHING : FirstPenaltySearching(); break;
+		case LOCALIZE_PENALTY_MARK : LocalizePenaltyMark(); break;
+		case LOCALIZE_GOALPOST : LocalizeGoalPost(); break;
+		case PASS_BALL_STATE : PassBall(); break;
+	}
+}
+void Behavior::Process(Point2D center)
+{
+	ObjectPos = center;
+
+
+	switch(State)
+	{
+		case READY_STATE : ReadyState(); break;
+		case NORMAL_STATE : NormalState(); break;
+		case CHECK_POST_STATE : checkPost(); break;
+		case APROACHING_BALL : ProcessAproachingBall2(); break;
+		case TURN_AROUND_BALL_STATE : turningBall(); break;
+		case DRIBBLE_STATE : dribbleBall(); break;
+		case PENALTY_KICK_STATE : PenaltyKickState(); break;
+		case STATIC_STATE : StaticState(); break;
+		case FIRST_PENALTY_SEARCHING : FirstPenaltySearching(); break;
+		case LOCALIZE_PENALTY_MARK : LocalizePenaltyMark(); break;
+		case LOCALIZE_GOALPOST : LocalizeGoalPost(); break;
+		case PASS_BALL_STATE : PassBall(); break;
+	}
+}
+
+void Behavior::CheckStatus()
+{
+	switch(State)
+        {
+                case READY_STATE : printf("READY STATE\n"); break;
+                case NORMAL_STATE : printf("NORMAL STATE\n"); break;
+                case CHECK_POST_STATE : printf("CHECK POST STATE\n"); break;
+                case TURN_AROUND_BALL_STATE : printf("TURN AROUND BALL STATE\n"); break;
+                case DRIBBLE_STATE : printf("DRIBBLE STATE\n"); break;
+                case PENALTY_KICK_STATE : printf("PENALTY KICK STATE\n"); break;
+                case STATIC_STATE : printf("STATIC STATE\n"); break;
+                case FIRST_PENALTY_SEARCHING : printf("FIRST PENALTY SEARCHING\n"); break;
+                case LOCALIZE_PENALTY_MARK : printf("LOCALIZE PENALTY MARK\n"); break;
+                case LOCALIZE_GOALPOST : printf("LOCALIZE GOAL POST\n"); break;
+                case PASS_BALL_STATE : printf("PASS BALL STATE\n"); break;
+        }
+}
+
+extern bool startKickOff;
+extern bool ObstacleDetected;
+
+//========================BELUM DIGUNAKAN==========================================
+
+void Behavior::LocalizePenaltyMark()
+{
+	Tracker.Process(ObjectPos);
+//	Tracker.ProcessLocalizePenaltyMark(ObjectPos);
+        Follower.ProcessLocalizePenaltyMark(Tracker.ball_position);
+}
+
+void Behavior::LocalizeGoalPost()
+{
+	Tracker.ProcessCheckPost(ObjectPos);
+	Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+
+}
+
+void Behavior::FirstPenaltySearching()
+{
+	Tracker.Process(ObjectPos);
+        Follower.ProcessFirstPenaltySearching(Tracker.ball_position);
+
+	if(ObjectPos.X != -1 && ObjectPos.Y != -1)
+		set_normal_state();
+}
+
+void Behavior::PenaltyKickState()
+{
+	printf("PENALTY KICK>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+	Tracker.ProcessPenaltyKick(ObjectPos);
+        Follower.ProcessPenaltyKick(Tracker.ball_position);
+
+	if(Action::GetInstance()->IsRunning() == 0)
+        {
+                Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                if(Follower.KickBall != 0)
+                {
+			usleep(8000);
+                    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                    Action::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+		    printf("KickBall = %d \n", Follower.KickBall);
+                    if(Follower.KickBall == -1)
+                    {
+			usleep(8000);
+                        Action::GetInstance()->Start(12);//123   // RIGHT KICK
+                        fprintf(stderr, "RightKick! \n");
+                    }
+                    else if(Follower.KickBall == 1)
+                    {
+			usleep(8000);
+                        Action::GetInstance()->Start(13);//117   // LEFT KICK
+                        fprintf(stderr, "LeftKick! \n");
+                    }
+                    else if(Follower.KickBall == -2)
+                    {
+			usleep(8000);
+                        Action::GetInstance()->Start(202);   // LEFT KICK
+                        fprintf(stderr, "LeftKick! \n");
+                    }
+                    else if(Follower.KickBall == 2)
+                    {
+			usleep(8000);
+                        Action::GetInstance()->Start(200);   // LEFT KICK
+                        fprintf(stderr, "LeftKick! \n");
+                    }
+                }
+        }
+}
+
+void Behavior::PassBall()
+{
+        Tracker.ProcessPenaltyKick(ObjectPos);
+        //Follower.ProcessPenaltyKick(Tracker.ball_position);
+
+        if(Action::GetInstance()->IsRunning() == 0)
+        {
+               // Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+               // Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                if(Follower.KickBall != 0)
+                {
+                    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+                    Action::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+
+                    if(Follower.KickBall == -1)
+                    {
+                        Action::GetInstance()->Start(131);   // RIGHT KICK
+                        //fprintf(stderr, "RightKick! \n");
+                    }
+                    else if(Follower.KickBall == 1)
+                    {
+                        Action::GetInstance()->Start(130);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                    }
+                    else if(Follower.KickBall == 2)
+                    {
+                        Action::GetInstance()->Start(130);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                    }
+                    else if(Follower.KickBall == 1)
+                    {
+                        Action::GetInstance()->Start(130);   // LEFT KICK
+                        //fprintf(stderr, "LeftKick! \n");
+                    }
+                }
+        }
+}
+
+
+void Behavior::StaticState()
+{
+	Tracker.Process(ObjectPos);
+
+	ReadyState();
+}
+
+void Behavior::ReadyState()
+{
+	Follower.InitKickBallCount();
+	Follower.initMember();
+
+        Behavior::GetInstance()->set_normal_state();
+        Walking::GetInstance()->stop_counting_step();
+
+	Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+	Walking::GetInstance()->A_MOVE_AIM_ON = false;
+
+        Behavior::GetInstance()->CountToReady = 0;
+        Behavior::GetInstance()->WaitUntilReady = true;
+
+	countHeadSearchingCycle = 0;
+}
+//==============================================================================================================
+
+void Behavior::NormalState()
+{
+	PostFound = 0;
+	Head::GetInstance()->m_LeftLimit = 70;
+	Head::GetInstance()->m_RightLimit = -70;
+	Vector2<int> ppfline;
+	ppfline.x = ObjectSize;
+	Tracker.Process(ObjectPos);
+	Follower.ProcessAproachingBall(Tracker.ball_position, ObjectDistance, ppfline.x);
+
+	if(State == CHECK_POST_STATE)
+	{
+		tiltLastSeenBall = Head::GetInstance()->GetTiltAngle();
+		PanLastSeenBall = Head::GetInstance()->GetPanAngle();//dipake pas aproachingball2
+		WaitUntilReady = true;
+		CountToReady = 0;
+		mark = 0;
+	}
+}
+
+int counter(0);
+int LastFound(0);
+
+void Behavior::checkPost()
+{
+/*
+PostFound = 0, masa saat robot mencari gawang hingga dapat pole pertama, 
+PostFound = 1, masa saat robot mencari pole kedua, 
+PsotFound = 2, robot telah selesai cari gawang, pindah state ke aproaching ball
+PostFound = 3, masa transisi.
+*/	
+
+	double pan = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_PAN);
+	double pan_range = Head::GetInstance()->GetLeftLimitAngle();
+        double pan_percent = pan / pan_range;
+	
+	printf("PostFound = %d \n", PostFound);
+
+
+	if(WaitUntilReady)	//ALGORITMA MENCARI GAWANG
+        {
+                if(CountToReady > MaxCountToReady+15)
+		//waktu yang diperlukan sampe tangannya turun
+                {
+			Head::GetInstance()->SetLimit(ObjectSize);//mengeset limit dari kepala berdasarkan pembacaan kompas. parameter objectsize merupakan besarnya pembacaan kompas
+			Head::GetInstance()->MoveByAngle(Head::GetInstance()->m_LeftLimit, 40);//menggerakkan kepala ke posisi limit kiri dengan tilt 40
+			Head::GetInstance()->initSearchingPost(RIGHT);//posisi kepala sekarang di kiri, maka searching ke kanan
+		
+			//mengnolkan semua parameter 
+			X_Moved = 0;
+                        WaitUntilReady = false;
+                        CountToReady = 0;
+                        PanPostRight = 0;
+                        PanPostLeft = 0;
+			PanPostBoth = 0;
+			countHeadSearchingCycle = 0;
+		}
+		else
+		{
+			CountToReady++;
+		}
+	}
+	else
+	{
+			CompassError = ObjectSize;
+		
+		if(abs(CompassError) * 360/255 > 90)
+		{
+			PostFound = 2;
+		} 		
+		if(PostFound == 0)
+		{
+
+
+			if(ObjectPos.X ==  -1 || ObjectPos.Y == -1)
+			{
+			//kalo ga nemu warna kuning, maka tracking
+				
+				Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+				Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+				if(countHeadSearchingCycle > 1) //kalo udah 1 cycle, maka berhenti nyari gawang
+				{
+					PanPostLeft = 0;
+					PanPostRight = 0;
+					PanPostBoth = 0;
+					PostFound = 2;
+				}
+			}
+			else
+			{
+				if(GoalPercept::GetInstance()->Status == GoalPercept::POSSIBLE_RIGHT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::POSSIBLE_LEFT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::LEFT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::RIGHT_POST)
+				{
+					Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+					Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+					if(ObjectPos.X > (Camera::WIDTH/2.0 - 40) && ObjectPos.X < (Camera::WIDTH/2.0 + 40))
+					{
+						PanPostLeft = pan;
+						PanPostRight = 0;
+						PanPostBoth = 0;
+						PostFound = 3;
+						Head::GetInstance()->initSearchingPost(RIGHT);
+					}
+				}
+				else if(GoalPercept::GetInstance()->Status == GoalPercept::BOTH_POST)
+				{
+					Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+					Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+					if(ObjectPos.X > (Camera::WIDTH/2.0 - 50) && ObjectPos.X < (Camera::WIDTH/2.0 + 50))
+					{
+						PostFound = 2;
+						PanPostLeft = 0;
+						PanPostRight = 0;
+						PanPostBoth = pan;
+					}
+				}	
+				else // kalo nemu kuning, tapi bukan tiang, maka coba ke searching ke bawah
+				{
+					Follower.ProcessLocalizeGoalPost(Point2D (-1,-1));
+					if(Count > 3)
+					{
+						Head::GetInstance()->MoveDown(10);
+						Count= 0;
+					}
+					else
+						Count++;
+
+
+				}
+			}
+			printf("Post Found 0\n");
+			printf("\nPanPostLeft = %lf \n", PanPostLeft);
+			printf("\nPanPostRight = %lf \n", PanPostRight);
+			printf("\nPanPostBoth = %lf \n", PanPostBoth);
+
+
+		}
+		else if(PostFound == 3)
+		{
+			if(countHeadSearchingCycle > 1 || pan < Head::GetInstance()->m_RightLimit - 20)
+			//kalo udah 			
+			{
+				PostFound == 2;
+			}
+			else if(GoalPercept::GetInstance()->Status == GoalPercept::BOTH_POST)
+			{
+				PanPostLeft = 0;
+				PanPostRight = 0;
+				PanPostBoth = pan;
+				PostFound = 2;
+			}
+			else if(GoalPercept::GetInstance()->CenterFoot.X != -1 || GoalPercept::GetInstance()->CenterHead.X != -1)//kalo misal masih terlihat gawang
+			{
+				if(Count > 3)
+				{
+					Head::GetInstance()->MoveRight(10);
+					Count = 0;
+				}
+				else
+					Count++;
+			}
+			else
+				PostFound = 1;
+		}
+		else if(PostFound == 1)
+		{
+		//kalo udah nemu salah satu tiang, maka bergerak lagi ke kanan
+			if((ObjectPos.X ==  -1 || ObjectPos.Y == -1))
+			{
+			//kalo ga nemu warna kuning, dan jarak Object kurang dari Objectsebelumya + 40, maka tracking
+				
+				if(Count > 3)
+				{
+					Head::GetInstance()->MoveRight(10);
+					Count = 0;
+				}
+				else
+					Count++;
+				Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+				Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+				if(countHeadSearchingCycle > 1) //kalo udah 1 cycle, maka berhenti nyari gawang
+				{
+					PostFound = 2;
+				}
+			}
+			else
+			{
+				if(countHeadSearchingCycle > 1) //kalo udah 1 cycle, maka berhenti nyari gawang
+				{
+					PostFound = 2;
+				}
+
+				if(GoalPercept::GetInstance()->Status == GoalPercept::POSSIBLE_RIGHT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::POSSIBLE_LEFT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::LEFT_POST
+				|| GoalPercept::GetInstance()->Status == GoalPercept::RIGHT_POST)
+				{
+					Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+					Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+					if(ObjectPos.X > (Camera::WIDTH/2.0 - 50) && ObjectPos.X < (Camera::WIDTH/2.0 + 50))
+					{
+						PostFound = 3;
+						PanPostLeft = PanPostLeft;
+						PanPostRight = pan;
+						PanPostBoth = 0;
+						Head::GetInstance()->initSearchingPost(RIGHT);
+					}
+				}
+				else if(GoalPercept::GetInstance()->Status == GoalPercept::BOTH_POST)
+				{
+					Tracker.ProcessCheckPost(ObjectPos, ObjectSize);
+					Follower.ProcessLocalizeGoalPost(Tracker.ball_position);
+					if(ObjectPos.X > (Camera::WIDTH/2.0 - 50) && ObjectPos.X < (Camera::WIDTH/2.0 + 50))
+					{
+						PostFound = 2;
+						PanPostLeft = 0;
+						PanPostRight = 0;
+						PanPostBoth = pan;
+					}	
+				}	
+				else // kalo nemu kuning, tapi bukan tiang, maka coba ke searching ke bawah
+				{
+					if(Count > 3)
+					{
+						Head::GetInstance()->MoveDown(10);
+						Count= 0;
+					}
+					else
+						Count++;
+
+
+				}
+			}
+			printf("Post Found 1\n");
+			printf("\nPanPostLeft = %lf \n", PanPostLeft);
+			printf("\nPanPostRight = %lf \n", PanPostRight);
+			printf("\nPanPostBoth = %lf \n", PanPostBoth);
+
+		}
+		else if(PostFound == 2)		
+		{	
+			printf("error = %d \n", CompassError);
+
+			printf("\nPanPostLeft = %lf \n", PanPostLeft);
+			printf("\nPanPostRight = %lf \n", PanPostRight);
+			printf("\nPanPostBoth = %lf \n", PanPostBoth);
+
+	//		if(PanPostLeft != 0 && PanPostRight == 0)//kalo cuma melihat satu tiang
+	//			PanPostBoth = 0;
+			if(PanPostLeft > 0 && PanPostRight < 0)//robot berada diantara kedua tiang, langsung sikat...
+				PanPostBoth = -1;
+			else if(PanPostBoth == 0)//kalo dapet 2 tiang, cek rata2nya
+				PanPostBoth = (PanPostLeft + PanPostRight)/2;
+
+			printf("\nPanPostBoth = %lf \n", PanPostBoth);
+
+			
+
+			WaitUntilReady = true;
+                        CountToReady = 0;
+
+                        PostFound = 0;
+
+			//limit head diubah ke default lagi.
+			Head::GetInstance()->m_LeftLimit = 70;
+			Head::GetInstance()->m_RightLimit = -70;
+		
+                        set_aproaching_ball();
+		}
+	}
+}
+
+
+void Behavior::ProcessAproachingBall2()
+{
+	printf("PROCESS APROACHING BALL 2 ----------------------------------\n");
+        double tilt = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_TILT);
+
+	if(WaitUntilReady)//BELUM READY UNTUK TURNING BALL
+                {
+			Walking::GetInstance()->Start();
+			Walking::GetInstance()->X_MOVE_AMPLITUDE = 0;
+			Walking::GetInstance()->Y_MOVE_AMPLITUDE = 0;
+			Walking::GetInstance()->A_MOVE_AMPLITUDE = 0;
+
+			X_Moved = Walking::GetInstance()->Get_X_Moved();
+			X_Moved = 0;
+
+			Head::GetInstance()->MoveByAngle(PanLastSeenBall, (Head::GetInstance()->GetBottomLimitAngle()));
+			mark = 0;
+                        if(CountToReady > MaxCountToReady + 7)//counter untuk nunggu sampe kepalanya turun
+                        {
+                                WaitUntilReady = false;
+                                CountToReady = 0;
+                        }
+                        else
+                        {
+                            CountToReady++;
+		        }
+                }
+	else
+	{
+		if(tilt < Head::GetInstance()->GetTopLimitAngle() - 20 && mark == 0)//kepalanya naik
+		//kalo udah dapet maka akan nengahin bola, jadi intinya sama kayak tracker.process
+		{
+			Tracker.ProcessUpHead(ObjectPos);
+			countHeadSearchingCycle = 0;
+		}
+		else if(tilt > Head::GetInstance()->GetTopLimitAngle() - 20 && mark == 0)//kalo kepalanya udah naik
+		{
+			mark = 1;
+		}
+		else
+		{
+			Tracker.Process(ObjectPos);
+		}
+
+		Follower.ProcessAproachingBall2(Tracker.ball_position);
+
+		X_Moved += Walking::GetInstance()->Get_X_Moved();
+
+		if(State == TURN_AROUND_BALL_STATE)
+		{
+			
+			PanPostBoth =  PanPostBoth * (1 + abs(CompassError)/45 * X_Moved / 800);
+			if(PanPostLeft > 0 && PanPostRight < 0)//kalo robot berada di antara kedua gawang
+				PanPostBoth = -1;
+			printf("\nPanPostBoth = %lf \n", PanPostBoth);
+			printf("\nX_Moved = %lf \n", X_Moved);
+
+			WaitUntilReady = true;
+			CountToReady = 0;
+			X_Moved = 0;
+			mark =0;
+		}
+	}
+}
+
+void Behavior::turningBall()
+{
+	printf("TURNING BALL------------------------\n");
+	ObstacleDetected = false;
+	startKickOff = false;
+
+        double pan = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_PAN);
+
+        double tilt = MotionStatus::m_CurrentJoints.GetAngle(JointData::ID_HEAD_TILT);
+        double tilt_min = Head::GetInstance()->GetBottomLimitAngle();
+        double tilt_range = Head::GetInstance()->GetTopLimitAngle() - tilt_min;
+        double tilt_percent = (tilt - tilt_min) / tilt_range;
+        if(tilt_percent < 0)
+	        tilt_percent = -tilt_percent;
+
+	//gausah pake wait until ready, langsung sikat aja
+
+                        Tracker.Process(ObjectPos);
+			Follower.ProcessTurnAroundBall(Tracker.ball_position, PanPostBoth, CompassError);
+			PanLastSeenBall = pan;
+			tiltLastSeenBall = tilt;
+			        
+	                if(State == NORMAL_STATE || State == DRIBBLE_STATE || State == CHECK_POST_STATE)
+                        {
+        	                Walking::GetInstance()->stop_counting_step();
+                                CountToReady = 0;
+                              	WaitUntilReady = true;
+                        }
+}
+
+void Behavior::dribbleBall()
+{
+	ObstacleDetected = false;
+	startKickOff = false;
+	if(WaitUntilReady)
+	{
+		if(CountToReady > MaxCountToReady)
+		{
+			WaitUntilReady = false;
+			CountToReady = 0;
+		}
+		else
+		{
+			CountToReady++;
+		}
+	}
+	else
+	{
+		Tracker.ProcessToKick(ObjectPos);
+		Follower.ProcessToKick(Tracker.ball_position);
+	}
+}

@@ -1,0 +1,145 @@
+[Dimensions]
+xPosOpponentFieldBorder=3700	
+xPosOpponentGoal=3475
+xPosOpponentGoalpost=2975  	
+xPosOpponentGroundline=2975
+xPosOpponentSideCorner=2975	
+xPosOpponentPenaltyArea=2425	
+xPosOpponentPenaltyMark=1200	
+xPosHalfWayLine=0
+xPosOwnFieldBorder=-3700
+xPosOwnGoal=-3475
+xPosOwnGoalpost=-2975
+xPosOwnGroundline=-2975
+xPosOwnSideCorner=-2975
+xPosOwnPenaltyArea=-2425
+xPosOwnPenaltyMark=-1200
+
+yPosLeftFieldBorder=2700
+yPosLeftSideline=1975	
+yPosLeftGroundline=1975
+yPosLeftPenaltyArea=1075
+yPosLeftGoal=750
+yPosCenterGoal=0
+yPosRightFieldBorder=-2700
+yPosRightSideline=-1975
+yPosRightGroundline=-1975
+yPosRightPenaltyArea=-1075
+yPosRightGoal=-750
+
+xPosThrowInPointOpponentHalf=1200
+xPosThrowInPointCenter=0
+xPosThrowInPointOwnHalf=-1200
+
+fieldLinesWidth=50
+goalPostRadius=50
+centerCircleRadius=625
+goalHeight=800
+ballRadius=33
+ballFriction=200
+
+
+[carpetBorder]
+( xPosOpponentFieldBorder yPosRightFieldBorder ) - ( xPosOpponentFieldBorder yPosLeftFieldBorder )
+( xPosOpponentFieldBorder yPosLeftFieldBorder ) - ( xPosOwnFieldBorder yPosLeftFieldBorder )
+( xPosOwnFieldBorder yPosLeftFieldBorder ) - ( xPosOwnFieldBorder yPosRightFieldBorder )
+( xPosOwnFieldBorder yPosRightFieldBorder ) - ( xPosOpponentFieldBorder yPosRightFieldBorder )
+
+[fieldBorder]
+( xPosOpponentGroundline yPosRightSideline ) - ( xPosOpponentGroundline yPosLeftSideline )
+( xPosOpponentGroundline yPosLeftSideline ) - ( xPosOwnGroundline yPosLeftSideline )
+( xPosOwnGroundline yPosLeftSideline ) - ( xPosOwnGroundline yPosRightSideline )
+( xPosOwnGroundline yPosRightSideline ) - ( xPosOpponentGroundline yPosRightSideline )
+
+[fieldLines]
+// field border lines
+( xPosOpponentGroundline yPosRightSideline ) - ( xPosOpponentGroundline yPosLeftSideline )
+( xPosOpponentGroundline yPosLeftSideline ) - ( xPosOwnGroundline yPosLeftSideline )
+( xPosOwnGroundline yPosLeftSideline ) - ( xPosOwnGroundline yPosRightSideline )
+( xPosOwnGroundline yPosRightSideline ) - ( xPosOpponentGroundline yPosRightSideline )
+
+// center line
+( xPosHalfWayLine yPosLeftSideline ) - ( xPosHalfWayLine yPosRightSideline )
+
+// penalty areas
+( xPosOwnGroundline yPosLeftPenaltyArea ) - ( xPosOwnPenaltyArea yPosLeftPenaltyArea )
+( xPosOwnPenaltyArea yPosLeftPenaltyArea ) - ( xPosOwnPenaltyArea yPosRightPenaltyArea )
+( xPosOwnPenaltyArea yPosRightPenaltyArea ) - ( xPosOwnGroundline yPosRightPenaltyArea )
+
+( xPosOpponentGroundline yPosLeftPenaltyArea ) - ( xPosOpponentPenaltyArea yPosLeftPenaltyArea )
+( xPosOpponentPenaltyArea yPosLeftPenaltyArea ) - ( xPosOpponentPenaltyArea yPosRightPenaltyArea )
+( xPosOpponentPenaltyArea yPosRightPenaltyArea ) - ( xPosOpponentGroundline yPosRightPenaltyArea )
+
+// throw-in lines
+( 1150 0 ) - ( 1250 0 )
+( xPosThrowInPointOpponentHalf -50 ) - ( xPosThrowInPointOpponentHalf 50 )
+
+( -1150 0 ) - ( -1250 0 )
+( xPosThrowInPointOwnHalf -50 ) - ( xPosThrowInPointOwnHalf 50 )
+
+( -50 0 ) - ( 50 0 )
+
+// center circle
+circle ( 0 0 centerCircleRadius 16 )
+
+[xCorner]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+
+[tCorner0]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOwnGroundline yPosLeftPenaltyArea
+xPosOwnGroundline yPosRightPenaltyArea
+
+[tCorner90]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosHalfWayLine yPosRightSideline
+
+[tCorner180]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOpponentGroundline yPosLeftPenaltyArea
+xPosOpponentGroundline yPosRightPenaltyArea
+
+[tCorner270]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosHalfWayLine yPosLeftSideline
+
+[lCorner0]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOwnGroundline yPosLeftPenaltyArea
+xPosOwnGroundline yPosRightPenaltyArea
+xPosHalfWayLine yPosRightSideline
+xPosOwnGroundline yPosRightSideline
+xPosOpponentPenaltyArea yPosRightPenaltyArea 
+
+[lCorner90]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOpponentGroundline yPosLeftPenaltyArea
+xPosOpponentGroundline yPosRightPenaltyArea
+xPosHalfWayLine yPosRightSideline
+xPosOpponentGroundline yPosRightSideline
+xPosOwnPenaltyArea yPosRightPenaltyArea 
+
+[lCorner180]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOpponentGroundline yPosLeftPenaltyArea
+xPosOpponentGroundline yPosRightPenaltyArea
+xPosHalfWayLine yPosLeftSideline
+xPosOpponentGroundline yPosLeftSideline
+xPosOwnPenaltyArea yPosLeftPenaltyArea 
+
+[lCorner270]
+xPosHalfWayLine centerCircleRadius
+xPosHalfWayLine -centerCircleRadius
+xPosOwnGroundline yPosLeftPenaltyArea
+xPosOwnGroundline yPosRightPenaltyArea
+xPosHalfWayLine yPosLeftSideline
+xPosOwnGroundline yPosLeftSideline
+xPosOpponentPenaltyArea yPosLeftPenaltyArea 
