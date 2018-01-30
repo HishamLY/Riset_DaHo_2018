@@ -70,6 +70,7 @@ namespace Robot {
 		private:
 		public:
 			TeamCommunication();
+			TeamCommunication(int senderport, int receiverport, int playerstatus);
 
 			Sender* sender;
       Receiver* receiver;
@@ -77,6 +78,8 @@ namespace Robot {
 			std::string DataHeader;
 			int PlayerStatus;
 			int Port;
+			int SenderPort;
+			int ReceiverPort;
 
 			TeamData teamData[MAX_STATUS];
 

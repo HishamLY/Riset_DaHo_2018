@@ -64,7 +64,8 @@ int main(void)
         LinuxCamera::GetInstance()->CaptureFrame();
         memcpy(rgb_ball->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageSize);
 
-        ball_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        ball_finder->FilteringImageErotionDilation(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        // ball_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
         blue_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
         yellow_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
         red_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
@@ -108,8 +109,10 @@ int main(void)
         // std::vector<Point2D> center;
         Point2D centerBlob = ball.back();
 
+        // ball_finder->RGBtoGrayscale(rgb_ball);
+        // ball_finder->SobelFilter(rgb_ball);
         // ball_finder->EdgeDetect(rgb_ball);
-        ball_finder->Detect(rgb_ball, 40, 100, centerBlob, 50);
+        std::vector<Point2D> bola = ball_finder->Detect(rgb_ball, 10, 60, centerBlob, 100);
 
         //Perbandingan kedua titik
         /*while (!center.empty()) {
@@ -121,7 +124,7 @@ int main(void)
           center.pop_back();
         }*/
 
-        // streamer->send_image(ball_finder->edge_img);
+        // streamer->send_image(rgb_ball);
         // ball_finder->Reset(rgb_ball);
         streamer->send_image(rgb_ball);
     }

@@ -15,16 +15,25 @@ void die(char *s)
 }
 
 //Set up Array team status untuk komunikasi pada port 2013
-TeamCommunication::TeamCommunication():Port(2103),PlayerStatus(1)
+TeamCommunication::TeamCommunication():SenderPort(2103), ReceiverPort(2103), PlayerStatus(1)
 {
 	InitTeamStatus();
+}
+
+//Set up Array team status untuk komunikasi
+TeamCommunication::TeamCommunication(int senderport, int receiverport, int playerstatus)
+{
+  SenderPort = senderport;
+  ReceiverPort = receiverport;
+  PlayerStatus = playerstatus;
+  InitTeamStatus();
 }
 
 //Melakukan assign port kepada sender dan receiver
 void TeamCommunication::CreateConnection()
 {
-	sender = new Sender(Port);
-  receiver = new Receiver(Port);
+	sender = new Sender(SenderPort);
+  receiver = new Receiver(ReceiverPort);
 }
 
 //Melakukan inisiasi team status
@@ -220,7 +229,7 @@ int Receiver::recv ( void* data, int length ) const
 
     if ( status == -1 )
     {
-        //cout << "status == -1   errno == " << errno << "  in Socket::recv\n";
+        cout << "status == -1   errno == " << errno << "  in Socket::recv\n";
         return 0;
     }
     else if ( status == 0 )
@@ -249,8 +258,7 @@ void Receiver::set_non_blocking ( const bool b )
     else
         opts = ( opts & ~O_NONBLOCK );
 
-    fcntl ( m_sock,
-            F_SETFL,opts );
+    fcntl ( m_sock, F_SETFL, opts );
 }
 
 //Fungsi untuk mengecek socket address dari receiver

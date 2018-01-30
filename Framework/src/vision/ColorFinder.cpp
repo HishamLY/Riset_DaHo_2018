@@ -39,7 +39,7 @@ ColorFinder::ColorFinder() :
   {
     accumulator[i] = 0;
   }
-  edge_img = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
+  edge_img = new Image(Camera::WIDTH, Camera::HEIGHT, 1);
   //
   Xmin = 1000;
   Xmax = -1.0;
@@ -66,7 +66,7 @@ ColorFinder::ColorFinder(int hue, int hue_tol, int min_sat, int min_val, double 
   {
     accumulator[i] = 0;
   }
-  edge_img = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
+  edge_img = new Image(Camera::WIDTH, Camera::HEIGHT, 1);
   //
   Xmin = 1000;
   Xmax = -1.0;
@@ -606,92 +606,12 @@ void ColorFinder::Reset(Image * img) {
   {
     accumulator[i] = 0;
   	edge_img->m_ImageData[i * edge_img->m_PixelSize + 0] = 0;
-	edge_img->m_ImageData[i * edge_img->m_PixelSize + 1] = 0;
-	edge_img->m_ImageData[i * edge_img->m_PixelSize + 2] = 0;
-  }  
-}
-
-// Percobaan HoughTransform di dalam Color Finder
-/*void ColorFinder::HoughTransf(Image * img)
-{
-  for (int i = 0; i < img->m_NumberOfPixels; i++)
-  {
-    if (img->m_ImageData[i*img->m_PixelSize + 0] == 255)
-    {
-      for (int teta = 0; teta < MAXDEGREE; teta++)
-      {s
-        int r = ((i % Camera::WIDTH) * (cos(teta))) + ((i / Camera::WIDTH) * (sin(teta)));
-        if ( r < 0 )
-          accumulator[((teta+180) % MAXDEGREE) * MAXRADIUS - r] += 1; //= accumulator[int(teta)+180][int(-r)] + 1;
-        else
-        	accumulator[(teta % MAXDEGREE) * MAXRADIUS + r] += 1; //= accumulator[teta][r] + 1;
-      }
-    }
-  }
-
-  /*for (int i = 0; i < img->m_Height; i++) {
-      for (int j = 0; j < img->m_Width; i++) {
-        if (img->m_ImageData[i*img->m_PixelSize + 0] == 255)
-        {
-          for (int teta = 0; teta < MAXDEGREE; teta++)
-          {
-            int r = ((i % Camera::WIDTH) * (MATH::cosine(teta))) + ((i / Camera::WIDTH) * (MATH::sine(teta)));
-            if ( r < 0 )
-              accumulator[((teta+180) % MAXDEGREE) * MAXRADIUS - r] += 1; //= accumulator[int(teta)+180][int(-r)] + 1;
-            else
-              accumulator[(teta % MAXDEGREE) * MAXRADIUS + r] += 1; //= accumulator[teta][r] + 1;
-          }
-        }
-    }
-  }*/
-//}
-
-ColorClasses::Color ColorFinder::imgColor(Image* img, int x, int y)
-{
-  if(img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 0] == 255 &&
-      img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 1] == 255 &&
-      img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 2] == 0)
-    return ColorClasses::yellow;
-  else if(img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 0] == 255 &&
-          img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 1] == 168 &&
-          img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 2] == 0)
-    return ColorClasses::orange;
-  else if(img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 0] == 0 &&
-          img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 1] == 255 &&
-          img->m_ImageData[(y * Camera::WIDTH + x) * img->m_PixelSize + 2] == 0)
-    return ColorClasses::green;
-  else
-    return ColorClasses::none;
-}
-
-void ColorFinder::HoughCircle(Image * img, int r_min, int r_max)
-{
-  int x0, y0;
-
-
-  for (int i = 0; i < img->m_NumberOfPixels; i++)
-  {
-    if (img->m_ImageData[i * img->m_PixelSize + 0] == 255)
-    {
-      for (int r = r_min; r <= r_max; r++)
-      {
-        for (int teta = 0; teta < MAXDEGREE; teta++)
-        {
-          x0 = i / Camera::WIDTH - r * cos((teta) * M_PI / 180);
-          y0 = i % Camera::WIDTH - r * sin((teta) * M_PI / 180);
-          if (x0 < Camera::HEIGHT && x0 > 0
-              && y0 < Camera::WIDTH && y0 > 0)
-              {
-                accumulator[x0*y0] += 1;
-              }
-        }
-      }
-    }
+	  edge_img->m_ImageData[i * edge_img->m_PixelSize + 1] = 0;
+	  edge_img->m_ImageData[i * edge_img->m_PixelSize + 2] = 0;
   }
 }
 
-
-
+// Versi 26 - 01 - 2018, Merubah color space edge_img dari RGB color space menjadi 1
 void ColorFinder::EdgeDetect(Image * img)
 {
 	for (int i = 0; i < Camera::HEIGHT; i++)
@@ -717,38 +637,130 @@ void ColorFinder::EdgeDetect(Image * img)
          	   			img->m_ImageData[((i+1) * Camera::WIDTH + j) * img->m_PixelSize + 1] != 128 ||
                		img->m_ImageData[((i+1) * Camera::WIDTH + j) * img->m_PixelSize + 2] != 0)
                		)
-		    	
 			      {
-				      edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 255;
-				      edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 255;
-				      edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 255;
-			      }
-			      
+				      edge_img->m_ImageData[(Camera::WIDTH*(i) + j)] = 255;
+              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 255;
+              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 0;
+              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 0;
+            }
+
 		    }
 		    else
 		    {
-			    edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 0;
-			    edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 0;
-		      edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 0;
+          edge_img->m_ImageData[(Camera::WIDTH * (i) + j)] = 0;
+          // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 0;
+          // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 0;
+		      // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 0;
 		    }
 
     }
 	}
 }
 
-void ColorFinder::Detect(Image * img, int r_min, int r_max, Point2D center, int yHorizon)
+// Prosedur mengubah RGB to Grayscale, versi 26 - 01- 2018
+void ColorFinder::RGBtoGrayscale(Image * img)
 {
-  int x, y;
-  bool find = false;
+  for (int i = 0; i < Camera::HEIGHT; i++)
+  {
+    for(int j = 0; j < Camera::WIDTH; j++)
+    {
+      if (img->m_ImageData[(i * Camera::WIDTH + j) * img->m_PixelSize + 0] == 255 &&
+        img->m_ImageData[(i * Camera::WIDTH + j) * img->m_PixelSize + 1] == 128 &&
+        img->m_ImageData[(i * Camera::WIDTH + j) * img->m_PixelSize + 2] == 0)
+      {
+        edge_img->m_ImageData[(Camera::WIDTH * (i) + j)] = 255;
+      } else {
+        edge_img->m_ImageData[(Camera::WIDTH * (i) + j)] = 0;
+      }
+    }
+  }
+}
 
+// Prosedur untuk Sobel Filter, versi 26 - 01 - 18
+void ColorFinder::SobelFilter(Image * img)
+{
+  int x, y, xG, yG;
+
+  unsigned int i;
+
+  unsigned char *tempData = new unsigned char[edge_img->m_NumberOfPixels];
+
+  for (i = 0; i < img->m_NumberOfPixels; i++)
+  {
+    x = i % Camera::WIDTH;
+    y = i / Camera::WIDTH;
+
+    if (x < (Camera::WIDTH - 1) && y < (Camera::HEIGHT - 1)
+				&& (y > 0) && (x > 0))
+    {
+      xG = (edge_img->m_ImageData[(x + 1) + (y - 1) * Camera::WIDTH]
+          + 2 * edge_img->m_ImageData[(x + 1) + (y) * Camera::WIDTH]
+          + edge_img->m_ImageData[(x + 1) + (y + 1) * Camera::WIDTH]
+          - edge_img->m_ImageData[(x - 1) + (y - 1) * Camera::WIDTH]
+          - 2 * edge_img->m_ImageData[(x - 1) + (y) * Camera::WIDTH]
+          - edge_img->m_ImageData[(x - 1) + (y + 1) * Camera::WIDTH]);
+
+      yG = (edge_img->m_ImageData[(x - 1) + (y + 1) * Camera::WIDTH]
+          + 2 * edge_img->m_ImageData[(x) + (y + 1) * Camera::WIDTH]
+          + edge_img->m_ImageData[(x + 1) + (y + 1) * Camera::WIDTH]
+          - edge_img->m_ImageData[(x - 1) + (y - 1) * Camera::WIDTH]
+          - 2 * edge_img->m_ImageData[(x) + (y - 1) * Camera::WIDTH]
+          - edge_img->m_ImageData[(x + 1) + (y - 1) * Camera::WIDTH]);
+
+      tempData[i] = sqrt(xG * xG + yG * yG);
+    } else {
+      tempData[i] = 0;
+    }
+  }
+
+  for (i = 0; i < img->m_NumberOfPixels; i++)
+  {
+    edge_img->m_ImageData[i] = tempData[i];
+  }
+}
+
+// Versi 26 - 01 - 18, Perubahan untuk menyesuaikan dengan Sobel Filter
+std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Point2D center, int yHorizon)
+{
   Reset(img);
 
-  EdgeDetect(img);
+  std::vector<Point2D> ball;
+  int x, y, k, j;
+  int minX, minY, maxX, maxY;
+  int minrX = -1;
+  int minrY = -1;
+  int minr = 0;
+  double distance = 999.0;
+  // bool find = false;
+  int count = 0;
+
+  // EdgeDetect(img);
+  RGBtoGrayscale(img);
+  SobelFilter(img);
+  /* minX = int(center.X) - 20;
+  if (minX < 0) {
+    minX = 0;
+  }
+  minY = int(center.Y) - 20;
+  if (minY < 0) {
+    minY = 0;
+  }
+  maxX = int(center.X) + 20;
+  if (maxX >= Camera::WIDTH) {
+    maxX = Camera::WIDTH - 1;
+  }
+  maxY = int(center.Y) + 20;
+  if (maxY >= Camera::HEIGHT) {
+    maxY = Camera::HEIGHT - 1;
+  } */
   for (int r = r_min; r <= r_max; r++)
   {
     for (int i = 0; i < img->m_NumberOfPixels; i++)
+    // for (int i = (minX + minY * Camera::WIDTH) ; i < (maxX + maxY * Camera::WIDTH); i++)
     {
-      if (edge_img->m_ImageData[i * img->m_PixelSize + 0] == 255)
+      // x = i % Camera::WIDTH;
+      // y = i / Camera::WIDTH;
+      if (edge_img->m_ImageData[i] > 100 && edge_img->m_ImageData[i] < 200)
       {
         // Point sebaiknya integer
         x = i % Camera::WIDTH;
@@ -757,35 +769,55 @@ void ColorFinder::Detect(Image * img, int r_min, int r_max, Point2D center, int 
           Accum_circle(accumulator, x, y, r);
       }
     }
-    int thresh = 2 * r;
-    // int thresh = 10 * r;
-    /*for (int i = 0; i < img->m_NumberOfPixels; i++) {
-      if (accumulator[i] > thresh && !find) {
-        x = i % Camera::WIDTH;
-        y = i / Camera::WIDTH;
-        //Draw::Cross(img, Point2D(x,y), 5, ColorRGB(0,0,255));
-        drawCircle(img, x, y, r);
-        find = true;
-      }
-    }*/
+    //////////////////////
+    // Dugaan
+    // Jika objek semakin jauh maka untuk dapat terdeteksi, maka threshold harus diturunkan
+    // Jika objek dekat maka threshold harus dinaikkan agar deteksi bola menjadi presisi
+    //////////////////////
+    // int thresh = 2 * r;
+    int thresh = 3 * r;
     int i = 0;
-    while (i < img->m_NumberOfPixels && !find) {
+    // int i = (minX + minY * Camera::WIDTH);
+    // while (i < img->m_NumberOfPixels && !find)
+    //Versi 19-01-2017 //Percobaan mencari lingkaran dengan jarak terdekat
+    //Versi 26-01-2017, Perubahan sedikit untuk penyesuaian dengan SobelFilter
+    while (i < img->m_NumberOfPixels && count < 2)
+    // while (i < (maxX + maxY * Camera::WIDTH) && count < 3)
+    {
       if (accumulator[i] > thresh) {
         x = i % Camera::WIDTH;
         y = i / Camera::WIDTH;
-        int k = x - int(center.X);
-        int j = y - int(center.Y);
-        // if (abs(k) <= 20 && abs(j) <= 20 && y > yHorizon) {
+        k = x - int(center.X);
+        j = y - int(center.Y);
+        if (abs(k) <= 20 && abs(j) <= 20 && y > yHorizon) {
+          double temp = sqrt(k * k + j * j);
+          if (temp < distance) {
+            distance = temp;
+            minrX = x;
+            minrY = y;
+            minr = r;
+          }
+        }
+        if (y > yHorizon) {
           drawCircle(img, x, y, r);
           Draw::Circle(img, Point2D(x,y), 3, ColorRGB(255,255,0));
-          printf("(%d,%d)\n", x, y);
-        // }  
-        find = true;
+          // printf("(%d,%d)\n", x, y);
+          count++;
+        }
+        // find = true;
       }
       i++;
     }
-   	find = false;
+    // find = false;
+    count = 0;
   }
+  drawCircle(img, minrX, minrY, minr);
+  Draw::Circle(img, Point2D(minrX, minrY), 3, ColorRGB(255, 0, 255));
+  //printf("Lingkaran : (%d,%d)\n", minrX, minrY);
+  Point2D bola = Point2D(minrX, minrY);
+  ball.push_back(bola);
+
+  return ball;
 }
 
 void ColorFinder::Accum_circle(int * accum, int i, int j, int rad)

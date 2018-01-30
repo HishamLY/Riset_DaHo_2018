@@ -18,8 +18,8 @@
 #include "DebugDrawings.h"
 #include "Camera.h"
 
-#define COLOR_SECTION   "Find Color"
-#define INVALID_VALUE   -1024.0
+#define COLOR_SECTION "Find Color"
+#define INVALID_VALUE -1024.0
 
 #define MAXDEGREE 360
 #define MAXRADIUS 400
@@ -59,26 +59,25 @@ private:
     * F.S. Hasil filtering image telah ditampung ke dalam sebuah variabel m_result
     * @param img sebuah variabel bertipe Image yang digunakan untuk menampung gambar yang diterima dari kamera
     */
-  void Filtering(Image* img);
+  void Filtering(Image *img);
 
 public:
-  int m_hue;             /* 0 ~ 360 */
-  int m_hue_tolerance;   /* 0 ~ 180 */
-  int m_min_saturation;  /* 0 ~ 100 */
-  int m_min_value;       /* 0 ~ 100 */
-  double m_min_percent;  /* 0.0 ~ 100.0 */
-  double m_max_percent;  /* 0.0 ~ 100.0 */
+  int m_hue;            /* 0 ~ 360 */
+  int m_hue_tolerance;  /* 0 ~ 180 */
+  int m_min_saturation; /* 0 ~ 100 */
+  int m_min_value;      /* 0 ~ 100 */
+  double m_min_percent; /* 0.0 ~ 100.0 */
+  double m_max_percent; /* 0.0 ~ 100.0 */
 
   std::string color_section;
 
   int Xmin, Xmax, Ymin, Ymax;
 
-  Image * m_result;
-  Image * edge_img;
+  Image *m_result;
+  Image *edge_img;
 
-  int * accumulator;
+  int *accumulator;
   // int accumulator[101376];
-
 
   /** @brief Constructor
     * Konstruktor default Color Finder
@@ -103,10 +102,10 @@ public:
 
   /** @brief Prosedur untuk melakukan Load dan Save nilai konfigurasi kamera
     */
-  void LoadINISettings(minIni* ini);
-  void LoadINISettings(minIni* ini, const std::string &section);
-  void SaveINISettings(minIni* ini);
-  void SaveINISettings(minIni* ini, const std::string &section);
+  void LoadINISettings(minIni *ini);
+  void LoadINISettings(minIni *ini, const std::string &section);
+  void SaveINISettings(minIni *ini);
+  void SaveINISettings(minIni *ini, const std::string &section);
 
   Point2D m_center;
 
@@ -114,7 +113,7 @@ public:
     * @param yHorizon batas atas horizon (batas pandang) pendeteksian bola di kamera robot
     * @return m_center_point variabel point yang berada di tengah suatu gambar
     */
-  Point2D& GetPositionMoment(int yHorizon);
+  Point2D &GetPositionMoment(int yHorizon);
 
   /** @brief Fungsi untuk menentukan batas ujung lapangan sepakbola
     * Fungsi digunakan agar robot tidak melihat bola yang berada di luar batas lapangan
@@ -166,7 +165,7 @@ public:
     * @param yStart
     * @param yEnd
     */
-  void scanDown(int xStart, int yStart, int& yEnd);
+  void scanDown(int xStart, int yStart, int &yEnd);
 
   /** @brief Prosedur tidak diimplementasikan di ColorFinder.cpp
     *
@@ -174,36 +173,34 @@ public:
     * @param yStart
     * @param yEnd
     */
-  void findDown(int xStart, int yStart, int& yEnd);
+  void findDown(int xStart, int yStart, int &yEnd);
 
-  void Reset(Image * img);
+  /////////////////////////////////
+  // Prosedur dan Fungsi Riset 2018
+  void Reset(Image *img);
 
-  void HoughTransf(Image * img);
+  void EdgeDetect(Image *img);
 
-  void EdgeDetect(Image * img);
+  void RGBtoGrayscale(Image *img);
 
-  void FillHoughSpace(Image * img);
+  void SobelFilter(Image *img);
 
-  void Process(Image * img);
+  std::vector<Point2D> Detect(Image *img, int r_min, int r_max, Point2D center, int yHorizon);
 
-  void HoughCircle(Image * img, int r_min, int r_max);
+  void Accum_circle(int *accum, int i, int j, int rad);
 
-  void Detect(Image * img, int r_min, int r_max, Point2D center, int yHorizon);
+  void Accum_pixel(int *accum, int x, int y);
 
-  void Accum_circle(int * accum, int i, int j, int rad);
+  void drawCircle(Image *img, int i, int j, int rad);
 
-  void Accum_pixel(int * accum, int x, int y);
-
-  void drawCircle(Image * img, int i, int j, int rad);
-
-  void drawPixel(Image * img, int x, int y);
-
-  ColorClasses::Color imgColor(Image* img, int x, int y);
+  void drawPixel(Image *img, int x, int y);
+  // Akhir Fungsi dan Prosedur Baru
+  /////////////////////////////////
 
   /**
     *
     */
-  inline ColorClasses::Color imageColor(Image* img, int x, int y);
+  inline ColorClasses::Color imageColor(Image *img, int x, int y);
 
   /** @brief Prosedur yang sama dengan FilteringImageErotionDilation
     * @param img variabel Image yang digunakan untuk menyimpan data dari gambar yang ditangkap kamera
@@ -226,10 +223,11 @@ public:
   */
 class GoalPercept
 {
-private :
-  static GoalPercept* m_UniqueInstance;
+private:
+  static GoalPercept *m_UniqueInstance;
 
   GoalPercept();
+
 public:
   enum
   {
@@ -249,7 +247,7 @@ public:
     OPPONENT_GOAL
   };
 
-  static GoalPercept* GetInstance()
+  static GoalPercept *GetInstance()
   {
     return m_UniqueInstance;
   }
@@ -284,7 +282,7 @@ public:
     * @param yHorizon batas atas horizon (batas pandang) pendeteksian bola di kamera robot
     * @param OppGoal variabel boolean untuk menandakan apakah sedang melihat gawang musuh atau bukan
     */
-  void Process(Image* img, int yHorizon, bool OppGoal);
+  void Process(Image *img, int yHorizon, bool OppGoal);
 
   //Point2D findUpperPost(Image* img, int xCenter, int yHorizon, int GoalColour);
 
@@ -295,7 +293,7 @@ public:
     * @param yHorizon batas atas horizon (batas pandang) pendeteksian bola di kamera robot
     * @return CenterUpperPost Koordinat titik tengah dari tiang atas gawang
     */
-  Point2D findUpperPost(Image* img, int xCenter, int yHorizon);
+  Point2D findUpperPost(Image *img, int xCenter, int yHorizon);
 
 private:
   enum GoalColour
@@ -307,35 +305,34 @@ private:
   class Parameters
   {
   public:
-    Parameters() :
-      maxSkip(1),
-      minSegmentLength(5),
-      minYRunDiff(5),
-      minPostPixelHeight(40),
-      minHeadVisibleOffset(5),
-      //widthStepSize(10),
-      widthStepSize(2),	//EDITED
-      maxGreenScan(30),//10
-      minGreenBelow(10),//5
-      maxWidthErrorRatio(1.5f),
-      minWidthErrorRatio(0.4f),
-      maxWrongSizeRatio(0.25f),
-      maxFootDistance(721.0f)
-    {}
+    Parameters() : maxSkip(1),
+                   minSegmentLength(5),
+                   minYRunDiff(5),
+                   minPostPixelHeight(40),
+                   minHeadVisibleOffset(5),
+                   //widthStepSize(10),
+                   widthStepSize(2),  //EDITED
+                   maxGreenScan(30),  //10
+                   minGreenBelow(10), //5
+                   maxWidthErrorRatio(1.5f),
+                   minWidthErrorRatio(0.4f),
+                   maxWrongSizeRatio(0.25f),
+                   maxFootDistance(721.0f)
+    {
+    }
 
     int minSegmentLength,
-    widthStepSize,
-    maxSkip,
-    minYRunDiff,
-    minPostPixelHeight,
-    minHeadVisibleOffset,
-    maxGreenScan,
-    minGreenBelow;
+        widthStepSize,
+        maxSkip,
+        minYRunDiff,
+        minPostPixelHeight,
+        minHeadVisibleOffset,
+        maxGreenScan,
+        minGreenBelow;
     float maxWidthErrorRatio,
-    minWidthErrorRatio,
-    maxWrongSizeRatio,
-    maxFootDistance;
-
+        minWidthErrorRatio,
+        maxWrongSizeRatio,
+        maxFootDistance;
   };
 
   class Spot
@@ -346,33 +343,33 @@ private:
     Point2D center;
     int avrgWidth;
     bool headVisible,
-    footVisible,
-    dead;
+        footVisible,
+        dead;
     Point2D onField;
     int footWidth;
     std::vector<Point2D> errorLeft, errorRight;
     std::vector<int> errorWidth;
   };
 
-  Image* imgProcess;
+  Image *imgProcess;
   Parameters parameters;
   std::vector<Spot> spots;
 
-  void findSpots(Image* img, int yHorizon);
-  void checkSpotsWidth(Image* img);
-  void checkGreenBelow(Image* img);
+  void findSpots(Image *img, int yHorizon);
+  void checkSpotsWidth(Image *img);
+  void checkGreenBelow(Image *img);
   void checkMaximumDistance();
   void resetPercept();
   //void createPercept(Image* img, int TargetColor);
-  void createPercept(Image* img, bool OppGoal);
+  void createPercept(Image *img, bool OppGoal);
 
-  int findBlueOrYellowRight(Image* img, int x, int y, int xEnd);
+  int findBlueOrYellowRight(Image *img, int x, int y, int xEnd);
   int findGreenDown(int x, int y, int yEnd);
-  int runRight(Image* img, int x, int y, ColorClasses::Color col, int xEnd, int maxSkip);
-  int runLeft(Image* img, int x, int y, ColorClasses::Color col, int xEnd, int maxSkip);
-  int runDown(Image* img, int x, int y, ColorClasses::Color col, int yEnd, int maxSkip);
-  int runUp(Image* img, int x, int y, ColorClasses::Color col, int yEnd, int maxSkip);
-  inline ColorClasses::Color imageColor(Image* img, int x, int y);
+  int runRight(Image *img, int x, int y, ColorClasses::Color col, int xEnd, int maxSkip);
+  int runLeft(Image *img, int x, int y, ColorClasses::Color col, int xEnd, int maxSkip);
+  int runDown(Image *img, int x, int y, ColorClasses::Color col, int yEnd, int maxSkip);
+  int runUp(Image *img, int x, int y, ColorClasses::Color col, int yEnd, int maxSkip);
+  inline ColorClasses::Color imageColor(Image *img, int x, int y);
 };
 }
 
