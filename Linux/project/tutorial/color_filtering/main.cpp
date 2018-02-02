@@ -124,9 +124,8 @@ int main(void)
           center.pop_back();
         }*/
 
-        // streamer->send_image(rgb_ball);
-        // ball_finder->Reset(rgb_ball);
         streamer->send_image(rgb_ball);
+        // ball_finder->Reset(rgb_ball);
     }
 
     return 0;
