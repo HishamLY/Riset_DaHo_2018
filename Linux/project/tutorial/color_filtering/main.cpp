@@ -64,10 +64,10 @@ int main(void)
         LinuxCamera::GetInstance()->CaptureFrame();
         memcpy(rgb_ball->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageData, LinuxCamera::GetInstance()->fbuffer->m_RGBFrame->m_ImageSize);
 
-        ball_finder->FilteringImageErotionDilation(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
-        // ball_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
-        blue_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
-        yellow_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        // ball_finder->FilteringImageErotionDilation(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        ball_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        // blue_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
+        // yellow_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
         red_finder->FilteringImage(LinuxCamera::GetInstance()->fbuffer->m_HSVFrame);
 
 
@@ -82,7 +82,7 @@ int main(void)
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 128;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
             }
-            else if(blue_finder->m_result->m_ImageData[i] == 1)
+            /* else if(blue_finder->m_result->m_ImageData[i] == 1)
             {
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 0;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 0;
@@ -93,7 +93,7 @@ int main(void)
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 255;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 255;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
-            }
+            } */
             else if(red_finder->m_result->m_ImageData[i] == 1)
             {
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 0;
