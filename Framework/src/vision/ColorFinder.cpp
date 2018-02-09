@@ -582,8 +582,8 @@ vector<Point2D> ColorFinder::getBlobCenter(Image *img, vector<Point2D> fieldBord
 
           if(sizeball < size)
             {
-              m_center.X = m_center_point.X;
-              m_center.Y = m_center_point.Y;
+              //m_center.X = m_center_point.X;
+              //m_center.Y = m_center_point.Y;
               sizeball = size;
             }
         }
@@ -716,6 +716,9 @@ void ColorFinder::SobelFilter(Image * img)
   for (i = 0; i < img->m_NumberOfPixels; i++)
   {
     edge_img->m_ImageData[i] = tempData[i];
+    // img->m_ImageData[i * img->m_PixelSize + 0] = tempData[i];
+    // img->m_ImageData[i * img->m_PixelSize + 1] = 0;
+    // img->m_ImageData[i * img->m_PixelSize + 2] = 0; 
   }
 }
 
@@ -774,8 +777,8 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
     // Jika objek semakin jauh maka untuk dapat terdeteksi, maka threshold harus diturunkan
     // Jika objek dekat maka threshold harus dinaikkan agar deteksi bola menjadi presisi
     //////////////////////
-    // int thresh = 2 * r;
-    int thresh = 3 * r;
+    // int thresh = 3 * r;
+    int thresh = 5 * r;
     int i = 0;
     // int i = (minX + minY * Camera::WIDTH);
     // while (i < img->m_NumberOfPixels && !find)
@@ -812,10 +815,13 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
     count = 0;
   }
   drawCircle(img, minrX, minrY, minr);
-  Draw::Circle(img, Point2D(minrX, minrY), 3, ColorRGB(255, 0, 255));
-  //printf("Lingkaran : (%d,%d)\n", minrX, minrY);
+  // Draw::Circle(img, Point2D(minrX, minrY), 3, ColorRGB(255, 0, 255));
+  // printf("Lingkaran : (%d,%d)\n", minrX, minrY);
   Point2D bola = Point2D(minrX, minrY);
   ball.push_back(bola);
+  Draw::Circle(img, m_center, 3, ColorRGB(255, 0, 255));
+  m_center.X = minrX;
+  m_center.Y = minrY;
 
   return ball;
 }
