@@ -753,6 +753,7 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
   Reset(img);
 
   std::vector<Point2D> ball;
+  Point2D bola;
   int x, y, k, j;
   int minX, minY, maxX, maxY;
   int minrX = -1;
@@ -763,7 +764,7 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
 
   RGBtoGrayscale(img);
   SobelFilter(img);
-  /* minX = int(center.X) - 20;
+  minX = int(center.X) - 20;
   if (minX < 0) {
     minX = 0;
   }
@@ -778,40 +779,32 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
   maxY = int(center.Y) + 20;
   if (maxY >= Camera::HEIGHT) {
     maxY = Camera::HEIGHT - 1;
-  } */
+  }
   for (int r = r_min; r <= r_max; r++)
   {
-    // for (int i = (minX + minY * Camera::WIDTH) ; i < (maxX + maxY * Camera::WIDTH); i++)
-    for (int i = 0; i < img->m_NumberOfPixels; i++)
+    for (int i = (minX + minY * Camera::WIDTH) ; i < (maxX + maxY * Camera::WIDTH); i++)
+    // for (int i = 0; i < img->m_NumberOfPixels; i++)
     {
       if (edge_img->m_ImageData[i] > 100 && edge_img->m_ImageData[i] < 200)
       {
-        // Point sebaiknya integer
         x = i % Camera::WIDTH;
         y = i / Camera::WIDTH;
         if (y > yHorizon)
           Accum_circle(accumulator, x, y, r);
       }
     }
-    //////////////////////
-    // Dugaan
-    // Jika objek semakin jauh maka untuk dapat terdeteksi, maka threshold harus diturunkan
-    // Jika objek dekat maka threshold harus dinaikkan agar deteksi bola menjadi presisi
-    //////////////////////
-    // int thresh = 3 * r;
     int thresh = 5 * r;
-    int i = 0;
-    // int i = (minX + minY * Camera::WIDTH);
-    //Versi 26-01-2017, Perubahan sedikit untuk penyesuaian dengan SobelFilter
-    // while (i < (maxX + maxY * Camera::WIDTH) && count < 3)
-    while (i < img->m_NumberOfPixels && count < 2)
+    // int i = 0;
+    // while (i < img->m_NumberOfPixels && count < 2)
+    int i = (minX + minY * Camera::WIDTH);
+    while (i < (maxX + maxY * Camera::WIDTH) && count < 2)
     {
       if (accumulator[i] > thresh) {
         x = i % Camera::WIDTH;
         y = i / Camera::WIDTH;
         k = x - int(center.X);
         j = y - int(center.Y);
-        if (abs(k) <= 40 && abs(j) <= 40 && y > yHorizon) {
+        /* if (abs(k) <= 40 && abs(j) <= 40 && y > yHorizon) {
           double temp = sqrt(k * k + j * j);
           if (temp < distance) {
             distance = temp;
@@ -819,11 +812,12 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
             minrY = y;
             minr = r;
           }
-        }
+        } */
         if (y > yHorizon) {
-          // drawCircle(img, x, y, r);
-          // Draw::Circle(img, Point2D(x,y), 3, ColorRGB(255,255,0));
-          // printf("(%d,%d)\n", x, y);
+          drawCircle(img, x, y, r);
+          Draw::Circle(img, Point2D(x, y), 3, ColorRGB(255,255,0));
+          bola = Point2D(x, y);
+          ball.push_back(bola);
           count++;
         }
       }
@@ -831,13 +825,14 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
     }
     count = 0;
   }
-  // Draw::Circle(img, Point2D(minrX, minrY), 3, ColorRGB(255, 0, 255));
-  // printf("Lingkaran : (%d,%d)\n", minrX, minrY);
-  Point2D bola = Point2D(minrX, minrY);
+  /* bola = Point2D(minrX, minrY);
   ball.push_back(bola);
-  drawCircle(img, minrX, minrY, minr);
   m_center.X = minrX;
   m_center.Y = minrY;
+  drawCircle(img, minrX, minrY, minr); */
+  bola = ball.back();
+  m_center.X = bola.X;
+  m_center.Y = bola.Y;
   Draw::Circle(img, m_center, 3, ColorRGB(255, 0, 255));
 
   return ball;

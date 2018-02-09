@@ -28,6 +28,9 @@ void change_current_dir()
 
 int main(void)
 {
+    Point2D centerBlob;
+    std::vector<Point2D> bola;
+
     printf( "\n===== Color filtering Tutorial for DARwIn =====\n\n");
 
     change_current_dir();
@@ -82,6 +85,12 @@ int main(void)
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 128;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
             }
+            else if(red_finder->m_result->m_ImageData[i] == 1)
+            {
+                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 0;
+                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 255;
+                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
+            }
             /* else if(blue_finder->m_result->m_ImageData[i] == 1)
             {
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 0;
@@ -94,35 +103,18 @@ int main(void)
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 255;
                 rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
             } */
-            else if(red_finder->m_result->m_ImageData[i] == 1)
-            {
-                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 0] = 0;
-                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 1] = 255;
-                rgb_ball->m_ImageData[i*rgb_ball->m_PixelSize + 2] = 0;
-            }
         }
 
         int yHorizon = 120;
         std::vector<Point2D> border = red_finder->getConvexFieldBorders(rgb_ball, 10, 10, yHorizon);
         std::vector<Point2D> ball = ball_finder->getBlobCenter(rgb_ball, border);
 
-        // std::vector<Point2D> center;
-        Point2D centerBlob = ball.back();
+        centerBlob = ball.back();
 
         // ball_finder->RGBtoGrayscale(rgb_ball);
         // ball_finder->SobelFilter(rgb_ball);
         // ball_finder->EdgeDetect(rgb_ball);
-        std::vector<Point2D> bola = ball_finder->Detect(rgb_ball, 10, 60, centerBlob, 100);
-
-        //Perbandingan kedua titik
-        /*while (!center.empty()) {
-          int x = center.back().X - centerBlob.X;
-          int y = center.back().Y - centerBlob.Y;
-          if (abs(x) <= 10 && abs(y) <= 10) {
-            Draw::Circle(rgb_ball, Point2D(center.back().X,center.back().Y), 3, ColorRGB(255,255,0));
-          }
-          center.pop_back();
-        }*/
+        bola = ball_finder->Detect(rgb_ball, 10, 60, centerBlob, 100);
 
         streamer->send_image(rgb_ball);
         // ball_finder->Reset(rgb_ball);

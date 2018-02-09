@@ -76,7 +76,7 @@ public:
   Image *m_result;
   Image *edge_img;
 
-  int *accumulator;
+  int * accumulator;
   // int accumulator[101376];
 
   /** @brief Constructor
@@ -197,9 +197,6 @@ public:
   // Akhir Fungsi dan Prosedur Baru
   /////////////////////////////////
 
-  /**
-    *
-    */
   inline ColorClasses::Color imageColor(Image *img, int x, int y);
 
   /** @brief Prosedur yang sama dengan FilteringImageErotionDilation
