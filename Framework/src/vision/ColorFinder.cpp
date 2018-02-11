@@ -582,8 +582,8 @@ vector<Point2D> ColorFinder::getBlobCenter(Image *img, vector<Point2D> fieldBord
 
           if(sizeball < size)
             {
-              // m_center.X = m_center_point.X;
-              // m_center.Y = m_center_point.Y;
+              m_center.X = m_center_point.X;
+              m_center.Y = m_center_point.Y;
               sizeball = size;
             }
         }
@@ -595,18 +595,12 @@ vector<Point2D> ColorFinder::getBlobCenter(Image *img, vector<Point2D> fieldBord
       Draw::Rectangle(img, A, B, ColorRGB(255,0,0));
     }
     Draw::Circle(img, m_center, 3, ColorRGB(255,0,0));
-    listBlob.push_back(m_center_point);
+    listBlob.push_back(m_center);
+    // printf("m_center = %f %f\n", m_center.X, m_center.Y);
 
   return listBlob;
 }
 
-/* Prosedur baru Riset 2018 */
-//////////////////////////////
-// Awal Prosedur dan Fungsi Baru
-
-/**
- * Prosedur untuk melakukan reset memori gambar deteksi tepi
- */
 void ColorFinder::Reset(Image * img) {
   long pix = Camera::WIDTH * Camera::HEIGHT;
   for(int i = 0; i < pix; i++) // sudut TETA
@@ -619,9 +613,6 @@ void ColorFinder::Reset(Image * img) {
 }
 
 // Versi 26 - 01 - 2018, Merubah color space edge_img dari RGB color space menjadi 1
-/**
- * Prosedur pendeteksian deteksi dengan metode lama
- */
 void ColorFinder::EdgeDetect(Image * img)
 {
 	for (int i = 0; i < Camera::HEIGHT; i++)
@@ -649,18 +640,12 @@ void ColorFinder::EdgeDetect(Image * img)
                		)
 			      {
 				      edge_img->m_ImageData[(Camera::WIDTH*(i) + j)] = 255;
-              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 255;
-              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 0;
-              // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 0;
             }
 
 		    }
 		    else
 		    {
           edge_img->m_ImageData[(Camera::WIDTH * (i) + j)] = 0;
-          // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 0] = 0;
-          // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 1] = 0;
-		      // edge_img->m_ImageData[(Camera::WIDTH*(i) + j) * edge_img->m_PixelSize + 2] = 0;
 		    }
 
     }
@@ -668,9 +653,6 @@ void ColorFinder::EdgeDetect(Image * img)
 }
 
 // Prosedur mengubah RGB to Grayscale, versi 26 - 01- 2018
-/**
- * Prosedur untuk konversi gambar RGB ke gambar Grayscale untuk deteksi tepi
- */
 void ColorFinder::RGBtoGrayscale(Image * img)
 {
   for (int i = 0; i < Camera::HEIGHT; i++)
@@ -690,9 +672,6 @@ void ColorFinder::RGBtoGrayscale(Image * img)
 }
 
 // Prosedur untuk Sobel Filter, versi 26 - 01 - 18
-/**
- * Prosedur untuk mengimplementasikan SobelFilter
- */
 void ColorFinder::SobelFilter(Image * img)
 {
   int x, y, xG, yG;
@@ -732,92 +711,112 @@ void ColorFinder::SobelFilter(Image * img)
   for (i = 0; i < img->m_NumberOfPixels; i++)
   {
     edge_img->m_ImageData[i] = tempData[i];
-    // img->m_ImageData[i * img->m_PixelSize + 0] = tempData[i];
-    // img->m_ImageData[i * img->m_PixelSize + 1] = 0;
-    // img->m_ImageData[i * img->m_PixelSize + 2] = 0; 
   }
 }
 
-// Versi 26 - 01 - 18, Perubahan untuk menyesuaikan dengan Sobel Filter
 /**
- * Fungsi Deteksi untuk metode Hough Circle dengan Sobel Filter
- * 
- * @param img Gambar bola yang ditangkap oleh kamera
- * @param r_min jari-jari minimum lingkaran yang ingin dideteksi
- * @param r_max jari-jari maksimum lingkaran yang ingin dideteksi
- * @param center Titik pusat bola dari metode Blob
- * @param yHorizon batas atas dari wilayah yang dicari untuk kemungkinan objek bola
+* Prekondisi bahwa vector pointofBall.size != 0
  */
+Point2D ColorFinder::MeanOfPoint(std::vector<Point2D> pointofBall)
+{
+  int sumX, sumY, size;
+  float avgX, avgY;
+  Point2D centerOfBall;
+  size = pointofBall.size();
+  sumX = 0; sumY = 0;
+
+  for (int i = 0; i < size; i++) {
+    sumX += int(pointofBall[i].X);
+    sumY += int(pointofBall[i].Y);
+    // printf("%f,%f\n", pointofBall[i].X, pointofBall[i].Y);
+  }
+
+  avgX = float(sumX / size);
+  avgY = float(sumY / size);
+  printf("%f,%f\n", avgX, avgY);
+  centerOfBall = Point2D(avgX, avgY);
+
+  return centerOfBall;
+}
+
+// Versi 26 - 01 - 18, Perubahan untuk menyesuaikan dengan Sobel Filter
 std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Point2D center, int yHorizon)
 {
   Reset(img);
 
-  std::vector<Point2D> ball;
-  Point2D bola;
-  int x, y, k, j;
-  int minX, minY, maxX, maxY;
-  int minrX = -1;
-  int minrY = -1;
-  int minr = 0;
-  double distance = 999.0;
-  int count = 0;
+  // Variabel
+  std::vector<Point2D> pointOfBall;
+  Point2D pointBola;
+  float avgX, avgY;
+  int x, y, dX, dY, minX, minY, maxX, maxY;
+  int count, thresh, i;
+  int minRX, minRY, minR;
+  double distance;
+
+  //Inisialisasi
+  minRX = -1; minRY = -1; minR = 0;
+  distance = 9999.0;
+  count = 0;
 
   RGBtoGrayscale(img);
   SobelFilter(img);
-  minX = int(center.X) - 20;
+  minX = int(center.X) - 40;
   if (minX < 0) {
     minX = 0;
   }
-  minY = int(center.Y) - 20;
+  minY = int(center.Y) - 40;
   if (minY < 0) {
     minY = 0;
   }
-  maxX = int(center.X) + 20;
+  maxX = int(center.X) + 40;
   if (maxX >= Camera::WIDTH) {
     maxX = Camera::WIDTH - 1;
   }
-  maxY = int(center.Y) + 20;
+  maxY = int(center.Y) + 40;
   if (maxY >= Camera::HEIGHT) {
     maxY = Camera::HEIGHT - 1;
-  }
+  } 
   for (int r = r_min; r <= r_max; r++)
   {
     for (int i = (minX + minY * Camera::WIDTH) ; i < (maxX + maxY * Camera::WIDTH); i++)
     // for (int i = 0; i < img->m_NumberOfPixels; i++)
     {
-      if (edge_img->m_ImageData[i] > 100 && edge_img->m_ImageData[i] < 200)
+      if (edge_img->m_ImageData[i] > 100 && edge_img->m_ImageData[i] < 150)
       {
+        // Point sebaiknya integer
         x = i % Camera::WIDTH;
         y = i / Camera::WIDTH;
         if (y > yHorizon)
           Accum_circle(accumulator, x, y, r);
       }
     }
-    int thresh = 5 * r;
-    // int i = 0;
+    // thresh = r;
+    thresh = 8 * r;
+    // i = 0;
+    i = (minX + minY * Camera::WIDTH);
+    while (i < (maxX + maxY * Camera::WIDTH) && count < 3)
     // while (i < img->m_NumberOfPixels && count < 2)
-    int i = (minX + minY * Camera::WIDTH);
-    while (i < (maxX + maxY * Camera::WIDTH) && count < 2)
     {
       if (accumulator[i] > thresh) {
         x = i % Camera::WIDTH;
         y = i / Camera::WIDTH;
-        k = x - int(center.X);
-        j = y - int(center.Y);
+        // dX = x - int(center.X);
+        // dY = y - int(center.Y);
         /* if (abs(k) <= 40 && abs(j) <= 40 && y > yHorizon) {
           double temp = sqrt(k * k + j * j);
           if (temp < distance) {
             distance = temp;
-            minrX = x;
-            minrY = y;
+            minRX = x;
+            minRY = y;
             minr = r;
           }
         } */
         if (y > yHorizon) {
-          drawCircle(img, x, y, r);
-          Draw::Circle(img, Point2D(x, y), 3, ColorRGB(255,255,0));
-          bola = Point2D(x, y);
-          ball.push_back(bola);
+          // drawCircle(img, x, y, r);
+          // Draw::Circle(img, Point2D(x,y), 3, ColorRGB(255,255,0));
+          pointBola = Point2D(x, y);
+          pointOfBall.push_back(pointBola);
+          // printf("(%d,%d)\n", x, y);
           count++;
         }
       }
@@ -825,17 +824,19 @@ std::vector<Point2D> ColorFinder::Detect(Image * img, int r_min, int r_max, Poin
     }
     count = 0;
   }
-  /* bola = Point2D(minrX, minrY);
-  ball.push_back(bola);
-  m_center.X = minrX;
-  m_center.Y = minrY;
-  drawCircle(img, minrX, minrY, minr); */
-  bola = ball.back();
-  m_center.X = bola.X;
-  m_center.Y = bola.Y;
-  Draw::Circle(img, m_center, 3, ColorRGB(255, 0, 255));
+  if (pointOfBall.size() > 0) {
+    pointBola = MeanOfPoint(pointOfBall);
+    m_center.X = pointBola.X;
+    m_center.Y = pointBola.Y;
+    // m_center.X = minRX;
+    // m_center.Y = minRY;
+    // drawCircle(img, m_center.X, m_center.Y, r);
+    Draw::Circle(img, m_center, 3, ColorRGB(255, 0, 255));
+    printf("Lingkaran : (%f,%f)\n", m_center.X, m_center.Y);
+    // printf("Lingkaran1 : (%f,%f)\n", avgX, avgY);
+  }
 
-  return ball;
+  return pointOfBall;
 }
 
 void ColorFinder::Accum_circle(int * accum, int i, int j, int rad)
@@ -928,9 +929,6 @@ void ColorFinder::drawPixel(Image * img, int x, int y) {
       img->m_ImageData[(Camera::WIDTH*(y) + x) * img->m_PixelSize + 2] = 0;
     }
 }
-
-// Akhir Prosedur dan Fungsi Baru
-//////////////////////////////
 
 vector<Point2D> ColorFinder::getObstacle(Image *img, vector<Point2D> fieldBorderPoints)
 {

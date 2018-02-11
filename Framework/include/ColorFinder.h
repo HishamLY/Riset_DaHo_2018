@@ -76,7 +76,7 @@ public:
   Image *m_result;
   Image *edge_img;
 
-  int * accumulator;
+  int *accumulator;
   // int accumulator[101376];
 
   /** @brief Constructor
@@ -194,9 +194,14 @@ public:
   void drawCircle(Image *img, int i, int j, int rad);
 
   void drawPixel(Image *img, int x, int y);
+
+  Point2D MeanOfPoint(std::vector<Point2D> pointofBall);
   // Akhir Fungsi dan Prosedur Baru
   /////////////////////////////////
 
+  /**
+    *
+    */
   inline ColorClasses::Color imageColor(Image *img, int x, int y);
 
   /** @brief Prosedur yang sama dengan FilteringImageErotionDilation
