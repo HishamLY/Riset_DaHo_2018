@@ -28,8 +28,8 @@ void change_current_dir()
 
 int main(void)
 {
-    Point2D centerBlob;
-    std::vector<Point2D> bola;
+    Point2D center_blob;
+    std::vector<Point2D> point_of_balls;
 
     printf( "\n===== Color filtering Tutorial for DARwIn =====\n\n");
 
@@ -105,16 +105,16 @@ int main(void)
             } */
         }
 
-        int yHorizon = 120;
-        std::vector<Point2D> border = red_finder->getConvexFieldBorders(rgb_ball, 10, 10, yHorizon);
-        std::vector<Point2D> ball = ball_finder->getBlobCenter(rgb_ball, border);
+        int y_horizon = 120;
+        std::vector<Point2D> border_points = red_finder->getConvexFieldBorders(rgb_ball, 10, 10, y_horizon);
+        std::vector<Point2D> ball_blobs = ball_finder->getBlobCenter(rgb_ball, border_points);
 
-        centerBlob = ball.back();
+        center_blob = ball_blobs.back();
 
         // ball_finder->RGBtoGrayscale(rgb_ball);
         // ball_finder->SobelFilter(rgb_ball);
         // ball_finder->EdgeDetect(rgb_ball);
-        bola = ball_finder->Detect(rgb_ball, 10, 60, centerBlob, 100);
+        point_of_balls = ball_finder->detect(rgb_ball, 10, 60, center_blob, 100);
 
         streamer->send_image(rgb_ball);
         // ball_finder->Reset(rgb_ball);

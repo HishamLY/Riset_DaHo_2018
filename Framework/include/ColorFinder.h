@@ -177,25 +177,25 @@ public:
 
   /////////////////////////////////
   // Prosedur dan Fungsi Riset 2018
-  void Reset(Image *img);
+  void reset(Image *img);
 
-  void EdgeDetect(Image *img);
+  void edge_detect(Image *img);
 
-  void RGBtoGrayscale(Image *img);
+  void RGB_to_grayscale(Image *img);
 
-  void SobelFilter(Image *img);
+  void sobel_filter(Image *img);
 
-  std::vector<Point2D> Detect(Image *img, int r_min, int r_max, Point2D center, int yHorizon);
+  std::vector<Point2D> detect(Image *img, int r_min, int r_max, Point2D center, int y_horizon);
 
-  void Accum_circle(int *accum, int i, int j, int rad);
+  void accum_circle(int *accum, int i, int j, int rad);
 
-  void Accum_pixel(int *accum, int x, int y);
+  void accum_pixel(int *accum, int x, int y);
 
-  void drawCircle(Image *img, int i, int j, int rad);
+  void draw_circle(Image *img, int i, int j, int rad);
 
-  void drawPixel(Image *img, int x, int y);
+  void draw_pixel(Image *img, int x, int y);
 
-  Point2D MeanOfPoint(std::vector<Point2D> pointofBall);
+  Point2D mean_of_point(std::vector<Point2D> point_of_balls);
   // Akhir Fungsi dan Prosedur Baru
   /////////////////////////////////
 
