@@ -146,7 +146,6 @@ int main(void)
 
     minIni* ini = new minIni(INI_FILE_PATH);
     rgb_output = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
-//    Image* field = new Image(Camera::WIDTH, Camera::HEIGHT, Image::RGB_PIXEL_SIZE);
     img = new Image(740,540, Image::RGB_PIXEL_SIZE);
     if( jpeg_utils::read_jpeg_file( img, "Field.jpg" ) > 0 )
     {
@@ -404,7 +403,7 @@ bool ResolutionSwitched = false;
         }
 	// =======================EOF Game Controller==============================================
 
-        	printf("Setpoint Kalibrasi = %d\n",sp);
+		printf("Setpoint Kalibrasi = %d\n",sp);
 		printf("CompassERR = %d\n",compassError);
 	//=========== Check Status Button ==================//
 	//NANTI SET POINT DI SET LAGI PAS TANDING
@@ -539,10 +538,10 @@ bool ResolutionSwitched = false;
 
 		//=============== WHEN READY STATE, SEND Point(-1,-1) =====================
 		int n = sprintf(sendDataTeamCom,"%s#%d#%lf#%lf#%lf", teamCom->DataHeader.c_str(), teamCom->PlayerStatus, Head::GetInstance()->GetTiltAngle(), -1.0, -1.0);
-                if(n > 0)
-                {
-                        if(teamCom->sender->send(sendDataTeamCom, n)); //printf("SUCCESS SENDING UDP\n");
-                }
+		if(n > 0)
+		{
+			if(teamCom->sender->send(sendDataTeamCom, n)); //printf("SUCCESS SENDING UDP\n");
+		}
 		teamCom->InitTeamStatus();
 		//=======================================================================
 
